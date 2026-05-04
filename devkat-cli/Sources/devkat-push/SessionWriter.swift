@@ -1,34 +1,44 @@
 import Foundation
 import DevKatParser
 
-// Supabase row -- snake_case to match the database columns
-private struct SessionRow: Encodable {
-    let id: String
-    let startedAt: String
-    let endedAt: String
-    let activeDuration: Double
-    let linesAdded: Int
-    let linesRemoved: Int
-    let filesTouched: Int
-    let tokens: Int
-    let model: String
-    let repoAlias: String?
-    let gitBranch: String?
-    let source: String
+// RPC params for merge_session — snake_case to match Postgres function args.
+// Custom encode to always include null keys (PostgREST requires all params present).
+private struct MergeParams: Encodable {
+    let p_id: String
+    let p_started_at: String
+    let p_ended_at: String
+    let p_active_duration: Double
+    let p_lines_added: Int
+    let p_lines_removed: Int
+    let p_files_touched: Int
+    let p_tokens: Int
+    let p_model: String
+    let p_repo_alias: String?
+    let p_git_branch: String?
+    let p_source: String
 
     enum CodingKeys: String, CodingKey {
-        case id
-        case startedAt    = "started_at"
-        case endedAt      = "ended_at"
-        case activeDuration = "active_duration"
-        case linesAdded   = "lines_added"
-        case linesRemoved = "lines_removed"
-        case filesTouched = "files_touched"
-        case tokens
-        case model
-        case repoAlias    = "repo_alias"
-        case gitBranch    = "git_branch"
-        case source
+        case p_id, p_started_at, p_ended_at, p_active_duration
+        case p_lines_added, p_lines_removed, p_files_touched
+        case p_tokens, p_model, p_repo_alias, p_git_branch, p_source
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(p_id, forKey: .p_id)
+        try c.encode(p_started_at, forKey: .p_started_at)
+        try c.encode(p_ended_at, forKey: .p_ended_at)
+        try c.encode(p_active_duration, forKey: .p_active_duration)
+        try c.encode(p_lines_added, forKey: .p_lines_added)
+        try c.encode(p_lines_removed, forKey: .p_lines_removed)
+        try c.encode(p_files_touched, forKey: .p_files_touched)
+        try c.encode(p_tokens, forKey: .p_tokens)
+        try c.encode(p_model, forKey: .p_model)
+        try c.encodeIfPresent(p_repo_alias, forKey: .p_repo_alias)
+        if p_repo_alias == nil { try c.encodeNil(forKey: .p_repo_alias) }
+        try c.encodeIfPresent(p_git_branch, forKey: .p_git_branch)
+        if p_git_branch == nil { try c.encodeNil(forKey: .p_git_branch) }
+        try c.encode(p_source, forKey: .p_source)
     }
 }
 
@@ -36,31 +46,30 @@ public func writeSession(_ session: ParsedSession) throws {
     let token = try validAccessToken()
 
     let fmt = ISO8601DateFormatter()
-    let row = SessionRow(
-        id: session.id,
-        startedAt: fmt.string(from: session.startedAt),
-        endedAt: fmt.string(from: session.endedAt),
-        activeDuration: session.activeDuration,
-        linesAdded: session.linesAdded,
-        linesRemoved: session.linesRemoved,
-        filesTouched: session.filesTouched,
-        tokens: session.tokens,
-        model: session.model,
-        repoAlias: session.repoAlias,
-        gitBranch: session.gitBranch,
-        source: session.source.rawValue
+    let params = MergeParams(
+        p_id: session.id,
+        p_started_at: fmt.string(from: session.startedAt),
+        p_ended_at: fmt.string(from: session.endedAt),
+        p_active_duration: session.activeDuration,
+        p_lines_added: session.linesAdded,
+        p_lines_removed: session.linesRemoved,
+        p_files_touched: session.filesTouched,
+        p_tokens: session.tokens,
+        p_model: session.model,
+        p_repo_alias: session.repoAlias,
+        p_git_branch: session.gitBranch,
+        p_source: session.source.rawValue
     )
 
-    let url = URL(string: "\(supabaseURL)/rest/v1/sessions")!
+    let url = URL(string: "\(supabaseURL)/rest/v1/rpc/merge_session")!
     var req = URLRequest(url: url)
     req.httpMethod = "POST"
     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
     req.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
     req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-    req.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
 
     let encoder = JSONEncoder()
-    req.httpBody = try encoder.encode(row)
+    req.httpBody = try encoder.encode(params)
 
     let sem = DispatchSemaphore(value: 0)
     var writeError: Error?
@@ -77,5 +86,5 @@ public func writeSession(_ session: ParsedSession) throws {
     sem.wait()
 
     if let writeError { throw writeError }
-    print("devkat-push: → synced to Supabase (\(session.source.rawValue) · \(session.id.prefix(8))…)")
+    print("devkat-push: → synced (\(session.source.rawValue) · \(session.id.prefix(8))…)")
 }

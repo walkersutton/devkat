@@ -32,6 +32,8 @@ func run() {
         pushLatestCodexSession()
     case "claude":
         pushLatestClaudeSession()
+    case "cursor":
+        pushLatestCursorSession()
     default:
         pushNewestSessionAcrossAllSources()
     }
@@ -60,8 +62,14 @@ func pushNewestSessionAcrossAllSources() {
         candidates.append(Candidate(date: date, action: { pushParsedSession(parseCodexSession(row)) }, label: "codex"))
     }
 
+    // Cursor
+    if let row = findLatestCursorSession() {
+        let date = Date(timeIntervalSince1970: Double(row.updatedAtMs) / 1000.0)
+        candidates.append(Candidate(date: date, action: { pushParsedSession(parseCursorSession(row)) }, label: "cursor"))
+    }
+
     guard let newest = candidates.max(by: { $0.date < $1.date }) else {
-        print("devkat-push: no sessions found in ~/.claude or ~/.codex")
+        print("devkat-push: no sessions found in ~/.claude, ~/.codex, or Cursor")
         exit(1)
     }
 
@@ -97,6 +105,15 @@ func pushLatestCodexSession() {
         exit(1)
     }
     let session = parseCodexSession(row)
+    pushParsedSession(session)
+}
+
+func pushLatestCursorSession() {
+    guard let row = findLatestCursorSession() else {
+        print("devkat-push: no Cursor sessions found")
+        exit(1)
+    }
+    let session = parseCursorSession(row)
     pushParsedSession(session)
 }
 
@@ -165,7 +182,12 @@ func listSessions() {
                 label: "codex",
                 name: "\($0.id.prefix(8))… \($0.cwd.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "?")") }
 
-    let all = (claudeFiles + codexRows).sorted { $0.date > $1.date }
+    let cursorRows = findAllCursorSessions()
+        .map { (date: Date(timeIntervalSince1970: Double($0.updatedAtMs) / 1000.0),
+                label: "cursor",
+                name: "\($0.composerId.prefix(8))… \($0.repoPath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "?")  \($0.name)") }
+
+    let all = (claudeFiles + codexRows + cursorRows).sorted { $0.date > $1.date }
 
     if all.isEmpty { print("No session files found."); return }
     print("\(all.count) sessions (newest first):")

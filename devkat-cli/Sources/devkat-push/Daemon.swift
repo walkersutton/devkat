@@ -62,6 +62,29 @@ func syncAll(verbose: Bool = false) {
         }
     }
 
+    // ── Cursor sessions ──
+    let cursorRows = findAllCursorSessions()
+    for row in cursorRows {
+        guard !state.contains(row.composerId) else { continue }
+
+        let session = parseCursorSession(row)
+        // Cursor doesn't have tokens; skip sessions with zero lines and < 60s
+        guard session.linesAdded + session.linesRemoved > 0, session.activeDuration >= 60 else {
+            state.mark(row.composerId)
+            continue
+        }
+
+        do {
+            try writeSession(session)
+            state.mark(row.composerId)
+            pushed += 1
+            if verbose { printSyncLine(session) }
+        } catch {
+            failed += 1
+            if verbose { print("  ✗ cursor/\(row.composerId.prefix(8))… \(error.localizedDescription)") }
+        }
+    }
+
     state.save()
 
     if pushed == 0 && failed == 0 {
@@ -114,6 +137,7 @@ func installDaemon() {
         <key>WatchPaths</key>
         <array>
             <string>\(home)/.codex/state_5.sqlite</string>
+            <string>\(home)/Library/Application Support/Cursor/User/globalStorage/state.vscdb</string>
         </array>
         <key>StandardOutPath</key>
         <string>\(logPath)</string>
@@ -141,7 +165,7 @@ func installDaemon() {
         print("  binary:   \(resolved)")
         print("  plist:    \(plistURL.path)")
         print("  log:      \(logPath)")
-        print("  interval: every 5 min + on Codex activity")
+        print("  interval: every 5 min + on Codex/Cursor activity")
         print()
         print("Sessions will now sync automatically. Check status with: devkat-push --status")
     } catch {

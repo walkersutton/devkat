@@ -1,7 +1,7 @@
 import Foundation
 
 struct Session: Identifiable, Hashable, Codable {
-    let id: UUID
+    let id: String
     let startedAt: Date
     let endedAt: Date
     let activeDuration: TimeInterval
@@ -9,7 +9,8 @@ struct Session: Identifiable, Hashable, Codable {
     let linesRemoved: Int
     let filesTouched: Int
     let tokens: Int
-    let model: String
+    let sources: [String]
+    let models: [String]
     let repoAlias: String?
     let gitBranch: String?
 
@@ -22,7 +23,8 @@ struct Session: Identifiable, Hashable, Codable {
         case linesRemoved   = "lines_removed"
         case filesTouched   = "files_touched"
         case tokens
-        case model
+        case sources
+        case models
         case repoAlias      = "repo_alias"
         case gitBranch      = "git_branch"
     }
@@ -32,6 +34,11 @@ struct Session: Identifiable, Hashable, Codable {
     var linesPerHour: Int {
         let hours = max(activeDuration / 3600, 0.0001)
         return Int(Double(linesTotal) / hours)
+    }
+
+    /// e.g. "Claude + Codex" or "Cursor"
+    var sourceLabel: String {
+        sources.map { $0.capitalized }.joined(separator: " + ")
     }
 }
 

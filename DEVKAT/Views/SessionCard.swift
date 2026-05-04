@@ -105,13 +105,14 @@ struct SessionCard: View {
 
 #Preview {
     let session = Session(
-        id: UUID(),
+        id: "preview-session",
         startedAt: Date().addingTimeInterval(-8040),
         endedAt: Date(),
         activeDuration: 8040,
         linesAdded: 842, linesRemoved: 137,
         filesTouched: 12, tokens: 18_400,
-        model: "claude-opus-4-5",
+        sources: ["claude", "codex"],
+        models: ["claude-opus-4-5", "gpt-5"],
         repoAlias: "devkat", gitBranch: "main"
     )
     ZStack {
