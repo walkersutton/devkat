@@ -104,31 +104,34 @@ struct HomeView: View {
                 Text("Paste this in your terminal:")
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(Theme.textMuted)
-                Text("curl -fsSL https://raw.githubusercontent.com/runnon/devkat-releases/main/install.sh | sh")
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(Theme.textMuted)
-                    .tint(Theme.textMuted)
-                    .environment(\.openURL, OpenURLAction { _ in return .discarded })
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Theme.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    .onTapGesture {
-                        UIPasteboard.general.string = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat-releases/main/install.sh | sh"
-                        copiedCommand = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedCommand = false }
+                VStack(spacing: 8) {
+                    Text("curl -fsSL https://raw.githubusercontent.com/runnon/devkat-releases/main/install.sh | sh")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(Theme.textMuted)
+                        .tint(Theme.textMuted)
+                        .environment(\.openURL, OpenURLAction { _ in return .discarded })
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    if copiedCommand {
+                        Text("COPIED")
+                            .font(.system(size: 10, design: .monospaced).weight(.bold))
+                            .foregroundStyle(Theme.logoGreen)
+                            .tracking(1.5)
+                    } else {
+                        Text("TAP HERE TO COPY")
+                            .font(.system(size: 10, design: .monospaced).weight(.bold))
+                            .foregroundStyle(Theme.logoGreen)
+                            .tracking(1.5)
                     }
-                if copiedCommand {
-                    Text("COPIED")
-                        .font(.system(size: 10, design: .monospaced).weight(.bold))
-                        .foregroundStyle(Theme.logoGreen)
-                        .tracking(1.5)
-                } else {
-                    Text("TAP HERE TO COPY")
-                        .font(.system(size: 10, design: .monospaced).weight(.bold))
-                        .foregroundStyle(Theme.logoGreen)
-                        .tracking(1.5)
+                }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    UIPasteboard.general.string = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat-releases/main/install.sh | sh"
+                    copiedCommand = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedCommand = false }
                 }
             }
             .padding(.horizontal, 20)
