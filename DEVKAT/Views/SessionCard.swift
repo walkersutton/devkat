@@ -104,9 +104,19 @@ struct SessionCard: View {
 }
 
 #Preview {
+    let session = Session(
+        id: UUID(),
+        startedAt: Date().addingTimeInterval(-8040),
+        endedAt: Date(),
+        activeDuration: 8040,
+        linesAdded: 842, linesRemoved: 137,
+        filesTouched: 12, tokens: 18_400,
+        model: "claude-opus-4-5",
+        repoAlias: "devkat", gitBranch: "main"
+    )
     ZStack {
         Theme.background.ignoresSafeArea()
-        SessionCard(session: Session.mock[0])
+        SessionCard(session: session)
             .padding()
     }
 }
