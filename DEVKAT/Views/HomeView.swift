@@ -69,7 +69,9 @@ struct HomeView: View {
 
             HStack(alignment: .center, spacing: 8) {
                 PixelKat(pixelSize: 2, color: Theme.logoGreen)
-                PixelText(text: "DEVKAT", pixelSize: 2, color: Theme.logoGreen)
+                Text("DEVKAT")
+                    .font(.custom("Baskerville", size: 18).weight(.semibold))
+                    .foregroundStyle(Theme.logoGreen)
             }
 
             Spacer()
