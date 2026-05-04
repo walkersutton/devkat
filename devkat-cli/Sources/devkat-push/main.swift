@@ -4,27 +4,101 @@ import DevKatParser
 let args = CommandLine.arguments
 let home = FileManager.default.homeDirectoryForCurrentUser
 let claudeDir = home.appendingPathComponent(".claude")
+let codexDir  = home.appendingPathComponent(".codex")
 
 func run() {
     if args.contains("--login")  { return runLogin() }
     if args.contains("--logout") { return runLogout() }
     if args.contains("--list")   { return listSessions() }
 
-    let sessionURL: URL
+    // --session <path>  forces a specific Claude JSONL file
     if let idx = args.firstIndex(of: "--session"), args.count > idx + 1 {
-        sessionURL = URL(fileURLWithPath: args[idx + 1])
-    } else {
-        guard let latest = findLatestSessionFile(in: claudeDir) else {
-            print("devkat-push: no Claude Code session files found in ~/.claude/projects/")
-            exit(1)
-        }
-        sessionURL = latest
+        let url = URL(fileURLWithPath: args[idx + 1])
+        pushClaudeSession(at: url)
+        return
     }
 
-    print("devkat-push: parsing \(sessionURL.lastPathComponent) …")
+    // --source claude|codex  forces a specific tool; otherwise auto-detect newest across all
+    let forcedSource = args.firstIndex(of: "--source").flatMap {
+        args.count > $0 + 1 ? args[$0 + 1] : nil
+    }
 
+    switch forcedSource {
+    case "codex":
+        pushLatestCodexSession()
+    case "claude":
+        pushLatestClaudeSession()
+    default:
+        // Auto-detect: pick the most recently modified session across all tools
+        pushNewestSessionAcrossAllSources()
+    }
+}
+
+// MARK: - Auto-detect
+
+func pushNewestSessionAcrossAllSources() {
+    struct Candidate {
+        let date: Date
+        let action: () -> Void
+        let label: String
+    }
+
+    var candidates: [Candidate] = []
+
+    // Claude
+    if let url = findLatestSessionFile(in: claudeDir) {
+        let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+        candidates.append(Candidate(date: date, action: { pushClaudeSession(at: url) }, label: "claude"))
+    }
+
+    // Codex
+    if let row = findLatestCodexSession(in: codexDir) {
+        let date = Date(timeIntervalSince1970: Double(row.updatedAtMs) / 1000.0)
+        candidates.append(Candidate(date: date, action: { pushParsedSession(parseCodexSession(row)) }, label: "codex"))
+    }
+
+    guard let newest = candidates.max(by: { $0.date < $1.date }) else {
+        print("devkat-push: no sessions found in ~/.claude or ~/.codex")
+        exit(1)
+    }
+
+    print("devkat-push: auto-detected newest session from \(newest.label)")
+    newest.action()
+}
+
+// MARK: - Per-source push helpers
+
+func pushLatestClaudeSession() {
+    guard let url = findLatestSessionFile(in: claudeDir) else {
+        print("devkat-push: no Claude Code sessions found in ~/.claude/projects/")
+        exit(1)
+    }
+    pushClaudeSession(at: url)
+}
+
+func pushClaudeSession(at url: URL) {
+    print("devkat-push: parsing \(url.lastPathComponent) …")
     do {
-        let session = try parseSession(at: sessionURL)
+        let session = try parseSession(at: url)
+        try writeSession(session)
+        printSummary(session)
+    } catch {
+        print("devkat-push: error – \(error.localizedDescription)")
+        exit(1)
+    }
+}
+
+func pushLatestCodexSession() {
+    guard let row = findLatestCodexSession(in: codexDir) else {
+        print("devkat-push: no Codex sessions found in ~/.codex/state_5.sqlite")
+        exit(1)
+    }
+    let session = parseCodexSession(row)
+    pushParsedSession(session)
+}
+
+func pushParsedSession(_ session: ParsedSession) {
+    do {
         try writeSession(session)
         printSummary(session)
     } catch {
@@ -80,19 +154,21 @@ func runLogout() {
 // MARK: - List
 
 func listSessions() {
-    let files = findAllSessionFiles(in: claudeDir)
-        .sorted {
-            let a = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
-            let b = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
-            return a > b
-        }
+    let claudeFiles = findAllSessionFiles(in: claudeDir)
+        .map { (date: (try? $0.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast, label: "claude", name: $0.lastPathComponent) }
 
-    if files.isEmpty { print("No session files found."); return }
-    print("\(files.count) sessions (newest first):")
-    for (i, f) in files.prefix(20).enumerated() {
-        let mod = (try? f.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
-        let dateStr = mod.map { DateFormatter.localizedString(from: $0, dateStyle: .short, timeStyle: .short) } ?? "?"
-        print("  \(i + 1). \(f.lastPathComponent)  [\(dateStr)]  \(f.deletingLastPathComponent().lastPathComponent)")
+    let codexRows = findAllCodexSessions(in: codexDir)
+        .map { (date: Date(timeIntervalSince1970: Double($0.updatedAtMs) / 1000.0),
+                label: "codex",
+                name: "\($0.id.prefix(8))… \($0.cwd.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "?")") }
+
+    let all = (claudeFiles + codexRows).sorted { $0.date > $1.date }
+
+    if all.isEmpty { print("No session files found."); return }
+    print("\(all.count) sessions (newest first):")
+    for (i, s) in all.prefix(20).enumerated() {
+        let dateStr = DateFormatter.localizedString(from: s.date, dateStyle: .short, timeStyle: .short)
+        print("  \(i + 1). [\(s.label)]  \(s.name)  [\(dateStr)]")
     }
 }
 
@@ -101,7 +177,7 @@ func listSessions() {
 func printSummary(_ s: ParsedSession) {
     let df = DateFormatter(); df.dateFormat = "HH:mm"
     let dur = formatDuration(s.activeDuration)
-    print("  ✓ \(s.repoAlias ?? "unknown")  \(df.string(from: s.startedAt))–\(df.string(from: s.endedAt))  \(dur)  +\(s.linesAdded)/-\(s.linesRemoved)  \(formatTokens(s.tokens)) tokens  [\(s.model)]")
+    print("  ✓ [\(s.source.rawValue)]  \(s.repoAlias ?? "unknown")  \(df.string(from: s.startedAt))–\(df.string(from: s.endedAt))  \(dur)  +\(s.linesAdded)/-\(s.linesRemoved)  \(formatTokens(s.tokens)) tokens  [\(s.model)]")
 }
 
 func formatDuration(_ t: TimeInterval) -> String {

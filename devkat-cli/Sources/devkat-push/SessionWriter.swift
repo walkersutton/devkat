@@ -14,6 +14,7 @@ private struct SessionRow: Encodable {
     let model: String
     let repoAlias: String?
     let gitBranch: String?
+    let source: String
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -27,6 +28,7 @@ private struct SessionRow: Encodable {
         case model
         case repoAlias    = "repo_alias"
         case gitBranch    = "git_branch"
+        case source
     }
 }
 
@@ -45,7 +47,8 @@ public func writeSession(_ session: ParsedSession) throws {
         tokens: session.tokens,
         model: session.model,
         repoAlias: session.repoAlias,
-        gitBranch: session.gitBranch
+        gitBranch: session.gitBranch,
+        source: session.source.rawValue
     )
 
     let url = URL(string: "\(supabaseURL)/rest/v1/sessions")!
@@ -74,5 +77,5 @@ public func writeSession(_ session: ParsedSession) throws {
     sem.wait()
 
     if let writeError { throw writeError }
-    print("devkat-push: → synced to Supabase (\(session.id.prefix(8))…)")
+    print("devkat-push: → synced to Supabase (\(session.source.rawValue) · \(session.id.prefix(8))…)")
 }

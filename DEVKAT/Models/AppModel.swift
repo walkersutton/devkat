@@ -5,7 +5,7 @@ import UIKit
 @Observable
 final class AppModel {
     var selectedSession: Session?
-    var sessions: [Session] = Session.mock
+    var sessions: [Session] = []
     var isLoggedIn: Bool = AuthTokens.stored != nil
     var isLoadingSessions = false
 
@@ -31,7 +31,7 @@ final class AppModel {
     func signOut() {
         AuthTokens.clear()
         isLoggedIn = false
-        sessions = Session.mock
+        sessions = []
         selectedSession = nil
     }
 

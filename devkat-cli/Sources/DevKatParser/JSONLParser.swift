@@ -2,6 +2,12 @@ import Foundation
 
 // MARK: - Public output type
 
+public enum SessionSource: String, Codable {
+    case claude
+    case codex
+    case cursor
+}
+
 public struct ParsedSession: Codable {
     public let id: String
     public let startedAt: Date
@@ -14,18 +20,21 @@ public struct ParsedSession: Codable {
     public let model: String
     public let repoAlias: String?
     public let gitBranch: String?
+    public let source: SessionSource
 
     public init(
         id: String, startedAt: Date, endedAt: Date,
         activeDuration: TimeInterval, linesAdded: Int, linesRemoved: Int,
         filesTouched: Int, tokens: Int, model: String,
-        repoAlias: String?, gitBranch: String?
+        repoAlias: String?, gitBranch: String?,
+        source: SessionSource = .claude
     ) {
         self.id = id; self.startedAt = startedAt; self.endedAt = endedAt
         self.activeDuration = activeDuration; self.linesAdded = linesAdded
         self.linesRemoved = linesRemoved; self.filesTouched = filesTouched
         self.tokens = tokens; self.model = model
         self.repoAlias = repoAlias; self.gitBranch = gitBranch
+        self.source = source
     }
 }
 
@@ -199,7 +208,8 @@ public func parseSession(at url: URL) throws -> ParsedSession {
         tokens: totalTokens,
         model: model,
         repoAlias: repoAlias,
-        gitBranch: gitBranch
+        gitBranch: gitBranch,
+        source: .claude
     )
 }
 
