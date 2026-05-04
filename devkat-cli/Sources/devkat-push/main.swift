@@ -7,9 +7,13 @@ let claudeDir = home.appendingPathComponent(".claude")
 let codexDir  = home.appendingPathComponent(".codex")
 
 func run() {
-    if args.contains("--login")  { return runLogin() }
-    if args.contains("--logout") { return runLogout() }
-    if args.contains("--list")   { return listSessions() }
+    if args.contains("--login")     { return runLogin() }
+    if args.contains("--logout")    { return runLogout() }
+    if args.contains("--list")      { return listSessions() }
+    if args.contains("--install")   { return installDaemon() }
+    if args.contains("--uninstall") { return uninstallDaemon() }
+    if args.contains("--status")    { return daemonStatus() }
+    if args.contains("--sync-all")  { return syncAll(verbose: !args.contains("--quiet")) }
 
     // --session <path>  forces a specific Claude JSONL file
     if let idx = args.firstIndex(of: "--session"), args.count > idx + 1 {
@@ -29,7 +33,6 @@ func run() {
     case "claude":
         pushLatestClaudeSession()
     default:
-        // Auto-detect: pick the most recently modified session across all tools
         pushNewestSessionAcrossAllSources()
     }
 }
