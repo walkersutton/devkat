@@ -13,19 +13,22 @@ public enum CodexParseError: Error {
 // Minimal SQLite3 wrapper using the system dylib (no SPM dependency needed)
 import SQLite3
 
-public func findAllCodexSessions(in codexDir: URL) -> [CodexThreadRow] {
+public func findAllCodexSessions(in codexDir: URL, since cutoff: Date = Date(timeIntervalSince1970: 0)) -> [CodexThreadRow] {
     let dbPath = codexDir.appendingPathComponent("state_5.sqlite").path
     var db: OpaquePointer?
-    guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+    guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK else {
         return []
     }
     defer { sqlite3_close(db) }
+    sqlite3_busy_timeout(db, 5000)
 
+    let cutoffMs = Int64(cutoff.timeIntervalSince1970 * 1000)
     let sql = """
         SELECT id, rollout_path, created_at_ms, updated_at_ms,
                tokens_used, cwd, git_branch, model, model_provider
         FROM threads
         WHERE tokens_used > 0 AND has_user_event = 0
+          AND updated_at_ms >= \(cutoffMs)
         ORDER BY updated_at_ms DESC
         """
 

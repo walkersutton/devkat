@@ -260,8 +260,9 @@ public func parseSessions(at url: URL) throws -> [ParsedSession] {
 
 // MARK: - Session discovery
 
-public func findAllSessionFiles(in claudeDir: URL) -> [URL] {
+public func findAllSessionFiles(in claudeDir: URL, since cutoff: Date = Date(timeIntervalSince1970: 0)) -> [URL] {
     let fm = FileManager.default
+
     guard let projectDirs = try? fm.contentsOfDirectory(
         at: claudeDir.appendingPathComponent("projects"),
         includingPropertiesForKeys: [.isDirectoryKey],
@@ -279,9 +280,10 @@ public func findAllSessionFiles(in claudeDir: URL) -> [URL] {
             options: .skipsHiddenFiles
         ) else { continue }
 
-        // Only top-level .jsonl files (skip subagents/ subdirectory)
+        // Only top-level .jsonl files modified in the last 7 days
         for file in files where file.pathExtension == "jsonl" {
-            results.append(file)
+            let mod = (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+            if mod >= cutoff { results.append(file) }
         }
     }
     return results

@@ -57,7 +57,32 @@ func clearCredentials() {
     try? FileManager.default.removeItem(at: configURL)
 }
 
-// MARK: - Auth API calls
+// MARK: - Install timestamp
+// Sessions started before this time are never pushed.
+// Written once on --install and never changed.
+
+private var installTimestampURL: URL {
+    let home = FileManager.default.homeDirectoryForCurrentUser
+    return home.appendingPathComponent(".devkat/installed_at.txt")
+}
+
+func loadInstallTimestamp() -> Date {
+    guard let str = try? String(contentsOf: installTimestampURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+          let ts = TimeInterval(str) else {
+        return Date() // If missing, default to now (nothing gets synced)
+    }
+    return Date(timeIntervalSince1970: ts)
+}
+
+func writeInstallTimestamp() {
+    let ts = String(Date().timeIntervalSince1970)
+    let dir = installTimestampURL.deletingLastPathComponent()
+    try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+    // Only write once — never overwrite
+    guard !FileManager.default.fileExists(atPath: installTimestampURL.path) else { return }
+    try? ts.write(to: installTimestampURL, atomically: true, encoding: .utf8)
+}
+
 
 func signIn(email: String, password: String) throws -> StoredCredentials {
     let url = URL(string: "\(supabaseURL)/auth/v1/token?grant_type=password")!
@@ -96,7 +121,12 @@ private func performAuthRequest(_ req: URLRequest) throws -> StoredCredentials {
     let sem = DispatchSemaphore(value: 0)
     var result: Result<StoredCredentials, Error> = .failure(AuthError(message: "No response"))
 
-    URLSession.shared.dataTask(with: req) { data, response, error in
+    let config = URLSessionConfiguration.default
+    config.timeoutIntervalForRequest = 30
+    config.timeoutIntervalForResource = 60
+    let urlSession = URLSession(configuration: config)
+
+    urlSession.dataTask(with: req) { data, response, error in
         defer { sem.signal() }
         if let error { result = .failure(error); return }
         guard let data else { result = .failure(AuthError(message: "Empty response")); return }
@@ -116,7 +146,10 @@ private func performAuthRequest(_ req: URLRequest) throws -> StoredCredentials {
         }
     }.resume()
 
-    sem.wait()
+    let waitResult = sem.wait(timeout: .now() + 60)
+    if waitResult == .timedOut {
+        throw AuthError(message: "Request timed out")
+    }
     return try result.get()
 }
 

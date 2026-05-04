@@ -25,12 +25,15 @@ public struct CursorComposerRow {
     public let mode: String
 }
 
-public func findAllCursorSessions() -> [CursorComposerRow] {
+public func findAllCursorSessions(since cutoff: Date = Date(timeIntervalSince1970: 0)) -> [CursorComposerRow] {
     var db: OpaquePointer?
-    guard sqlite3_open_v2(cursorDBPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+    guard sqlite3_open_v2(cursorDBPath, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK else {
         return []
     }
     defer { sqlite3_close(db) }
+    sqlite3_busy_timeout(db, 5000)
+
+    let cutoffMs = Int64(cutoff.timeIntervalSince1970 * 1000)
 
     let sql = "SELECT value FROM ItemTable WHERE key = 'composer.composerHeaders'"
     var stmt: OpaquePointer?
@@ -64,6 +67,10 @@ public func findAllCursorSessions() -> [CursorComposerRow] {
         guard linesAdded + linesRemoved > 0 || filesChanged > 0 else { continue }
 
         let updatedAt = c["lastUpdatedAt"] as? Int64 ?? createdAt
+
+        // Skip sessions older than 7 days
+        guard updatedAt >= cutoffMs else { continue }
+
         let name = c["name"] as? String ?? ""
 
         var repoPath: String?
@@ -175,10 +182,11 @@ private func makeSingleCursorSession(_ row: CursorComposerRow) -> ParsedSession 
 /// Reads bubble timestamps for a given composer session from cursorDiskKV
 private func getCursorBubbleTimestamps(composerId: String) -> [Date] {
     var db: OpaquePointer?
-    guard sqlite3_open_v2(cursorDBPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+    guard sqlite3_open_v2(cursorDBPath, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK else {
         return []
     }
     defer { sqlite3_close(db) }
+    sqlite3_busy_timeout(db, 5000)
 
     let sql = "SELECT value FROM cursorDiskKV WHERE key LIKE 'bubbleId:\(composerId):%' LIMIT 500"
     var stmt: OpaquePointer?

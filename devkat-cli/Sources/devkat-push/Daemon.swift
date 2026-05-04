@@ -1,14 +1,30 @@
 import Foundation
 import DevKatParser
 
-// MARK: - Sync all unsynced sessions across every source
+// Sessions are only marked as "done" once inactive for this long.
+// Until then, the daemon re-pushes them every cycle (merge_session handles dedup).
+private let coldThreshold: TimeInterval = 4 * 3600 // 4 hours
+
+private func isCold(_ session: ParsedSession) -> Bool {
+    Date().timeIntervalSince(session.endedAt) > coldThreshold
+}
+
+private func fileIsCold(_ url: URL) -> Bool {
+    guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+          let mod = attrs[.modificationDate] as? Date else { return true }
+    return Date().timeIntervalSince(mod) > coldThreshold
+}
+
+// MARK: - Sync all sessions across every source
 
 func syncAll(verbose: Bool = false) {
+    print("devkat-push: starting sync…"); fflush(stdout)
     guard loadCredentials() != nil else {
         print("devkat-push: not logged in. Run: devkat-push --login")
         exit(1)
     }
 
+    let cutoff = loadInstallTimestamp()
     var state = SyncState.load()
     var pushed = 0
     var failed = 0
@@ -18,22 +34,27 @@ func syncAll(verbose: Bool = false) {
     let codexDir  = home.appendingPathComponent(".codex")
 
     // ── Claude sessions ──
-    let claudeFiles = findAllSessionFiles(in: claudeDir)
+    if verbose { print("  scanning claude…"); fflush(stdout) }
+    let claudeFiles = findAllSessionFiles(in: claudeDir, since: cutoff)
     for url in claudeFiles {
         let sid = url.deletingPathExtension().lastPathComponent
-        guard !state.contains(sid) else { continue }
+
+        // Skip only if file is cold AND already marked
+        if state.contains(sid) && fileIsCold(url) { continue }
 
         do {
             let sessions = try parseSessions(at: url)
             for session in sessions {
                 guard session.tokens > 0, session.activeDuration >= 60 else { continue }
-                guard !state.contains(session.id) else { continue }
+                if state.contains(session.id) && isCold(session) { continue }
+
                 try writeSession(session)
-                state.mark(session.id)
                 pushed += 1
                 if verbose { printSyncLine(session) }
+
+                if isCold(session) { state.mark(session.id) }
             }
-            state.mark(sid)
+            if fileIsCold(url) { state.mark(sid) }
         } catch {
             failed += 1
             if verbose { print("  ✗ claude/\(sid.prefix(8))… \(error.localizedDescription)") }
@@ -41,49 +62,55 @@ func syncAll(verbose: Bool = false) {
     }
 
     // ── Codex sessions ──
-    let codexRows = findAllCodexSessions(in: codexDir)
+    if verbose { print("  scanning codex…"); fflush(stdout) }
+    let codexRows = findAllCodexSessions(in: codexDir, since: cutoff)
     for row in codexRows {
-        guard !state.contains(row.id) else { continue }
-
         let sessions = parseCodexSessions(row)
+        let allCold = sessions.allSatisfy { isCold($0) }
+        if state.contains(row.id) && allCold { continue }
+
         for session in sessions {
             guard session.tokens > 0, session.activeDuration >= 60 else { continue }
-            guard !state.contains(session.id) else { continue }
+            if state.contains(session.id) && isCold(session) { continue }
 
             do {
                 try writeSession(session)
-                state.mark(session.id)
                 pushed += 1
                 if verbose { printSyncLine(session) }
+
+                if isCold(session) { state.mark(session.id) }
             } catch {
                 failed += 1
                 if verbose { print("  ✗ codex/\(row.id.prefix(8))… \(error.localizedDescription)") }
             }
         }
-        state.mark(row.id)
+        if allCold { state.mark(row.id) }
     }
 
     // ── Cursor sessions ──
-    let cursorRows = findAllCursorSessions()
+    if verbose { print("  scanning cursor…"); fflush(stdout) }
+    let cursorRows = findAllCursorSessions(since: cutoff)
     for row in cursorRows {
-        guard !state.contains(row.composerId) else { continue }
-
         let sessions = parseCursorSessions(row)
+        let allCold = sessions.allSatisfy { isCold($0) }
+        if state.contains(row.composerId) && allCold { continue }
+
         for session in sessions {
             guard session.linesAdded + session.linesRemoved > 0, session.activeDuration >= 60 else { continue }
-            guard !state.contains(session.id) else { continue }
+            if state.contains(session.id) && isCold(session) { continue }
 
             do {
                 try writeSession(session)
-                state.mark(session.id)
                 pushed += 1
                 if verbose { printSyncLine(session) }
+
+                if isCold(session) { state.mark(session.id) }
             } catch {
                 failed += 1
                 if verbose { print("  ✗ cursor/\(row.composerId.prefix(8))… \(error.localizedDescription)") }
             }
         }
-        state.mark(row.composerId)
+        if allCold { state.mark(row.composerId) }
     }
 
     state.save()
@@ -110,6 +137,7 @@ private var plistURL: URL {
 }
 
 func installDaemon() {
+    writeInstallTimestamp()
     // Find the devkat-push binary path
     let binaryPath = CommandLine.arguments[0].hasPrefix("/")
         ? CommandLine.arguments[0]
