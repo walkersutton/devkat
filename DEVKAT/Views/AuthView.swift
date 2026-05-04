@@ -59,7 +59,7 @@ struct AuthView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
-                        .background(.white)
+                        .background(Theme.logoGreen)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .disabled(isLoading || email.isEmpty || password.isEmpty)
