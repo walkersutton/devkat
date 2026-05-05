@@ -5,6 +5,8 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showDeleteConfirmation = false
+    @State private var isDeletingAccount = false
+    @State private var deleteErrorMessage: String?
     @State private var legalSheet: LegalSheet?
 
     enum LegalSheet: String, Identifiable {
@@ -59,7 +61,32 @@ struct SettingsView: View {
 
                     settingsSection("Delete Account") {
                         row(label: "Delete Account", color: .red) {
+                            deleteErrorMessage = nil
                             showDeleteConfirmation = true
+                        }
+                        .disabled(isDeletingAccount)
+
+                        if isDeletingAccount {
+                            divider
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                    .tint(Theme.textDim)
+                                Text("Deleting account...")
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(Theme.textDim)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                        }
+
+                        if let deleteErrorMessage {
+                            divider
+                            Text(deleteErrorMessage)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.red.opacity(0.85))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
                         }
                     }
 
@@ -72,11 +99,10 @@ struct SettingsView: View {
         .alert("Delete Account?", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                app.signOut()
-                dismiss()
+                deleteAccount()
             }
         } message: {
-        Text("This will sign you out. To fully delete your data, email xavier@alleykat.app.")
+            Text("This permanently deletes your account and all synced session data. This cannot be undone.")
         }
         .sheet(item: $legalSheet) { sheet in
             switch sheet {
@@ -213,6 +239,27 @@ struct SettingsView: View {
     }
 
     // MARK: - Helpers
+
+    private func deleteAccount() {
+        guard !isDeletingAccount else { return }
+        isDeletingAccount = true
+        deleteErrorMessage = nil
+
+        Task {
+            do {
+                try await app.deleteAccount()
+                await MainActor.run {
+                    isDeletingAccount = false
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isDeletingAccount = false
+                    deleteErrorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
 
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
