@@ -112,8 +112,11 @@ public func parseCursorSession(_ row: CursorComposerRow) -> ParsedSession {
 
 /// Parses a Cursor session, splitting into multiple sessions at 4-hour inactivity gaps.
 public func parseCursorSessions(_ row: CursorComposerRow) -> [ParsedSession] {
-    // Try to get bubble timestamps for this composer session
-    let bubbleTimestamps = getCursorBubbleTimestamps(composerId: row.composerId)
+    // Get bubble data (timestamps + token counts) for this composer session
+    let bubbleData = getCursorBubbleData(composerId: row.composerId)
+    let totalTokens = bubbleData.reduce(0) { $0 + $1.inputTokens + $1.outputTokens }
+
+    let bubbleTimestamps = bubbleData.compactMap { $0.timestamp }.sorted()
 
     if bubbleTimestamps.count >= 2 {
         var splitIndices: [Int] = [0]
@@ -132,7 +135,7 @@ public func parseCursorSessions(_ row: CursorComposerRow) -> [ParsedSession] {
                 let gap = bubbleTimestamps[i].timeIntervalSince(bubbleTimestamps[i-1])
                 active += min(gap, activeGapCap)
             }
-            return max(active, 60) // at least 1 min if there were any bubbles
+            return max(active, 60)
         }
 
         if splitIndices.count > 1 {
@@ -155,7 +158,7 @@ public func parseCursorSessions(_ row: CursorComposerRow) -> [ParsedSession] {
                     linesAdded: Int(Double(row.linesAdded) * proportion),
                     linesRemoved: Int(Double(row.linesRemoved) * proportion),
                     filesTouched: row.filesChanged,
-                    tokens: 0,
+                    tokens: Int(Double(totalTokens) * proportion),
                     model: "cursor",
                     repoAlias: repoAlias,
                     gitBranch: row.gitBranch,
@@ -165,20 +168,18 @@ public func parseCursorSessions(_ row: CursorComposerRow) -> [ParsedSession] {
             return results
         }
 
-        // Single segment — use active time instead of full wall span
+        // Single segment
         let segActive = activeTime(from: 0, to: bubbleTimestamps.count)
-        let startedAt = bubbleTimestamps.first!
-        let endedAt   = bubbleTimestamps.last!
         let repoAlias = row.repoPath.map { URL(fileURLWithPath: $0).lastPathComponent }
         return [ParsedSession(
             id: row.composerId,
-            startedAt: startedAt,
-            endedAt: endedAt,
+            startedAt: bubbleTimestamps.first!,
+            endedAt: bubbleTimestamps.last!,
             activeDuration: segActive,
             linesAdded: row.linesAdded,
             linesRemoved: row.linesRemoved,
             filesTouched: row.filesChanged,
-            tokens: 0,
+            tokens: totalTokens,
             model: "cursor",
             repoAlias: repoAlias,
             gitBranch: row.gitBranch,
@@ -186,10 +187,10 @@ public func parseCursorSessions(_ row: CursorComposerRow) -> [ParsedSession] {
         )]
     }
 
-    return [makeSingleCursorSession(row)]
+    return [makeSingleCursorSession(row, tokens: totalTokens)]
 }
 
-private func makeSingleCursorSession(_ row: CursorComposerRow) -> ParsedSession {
+private func makeSingleCursorSession(_ row: CursorComposerRow, tokens: Int = 0) -> ParsedSession {
     let startedAt = Date(timeIntervalSince1970: Double(row.createdAtMs) / 1000.0)
     let endedAt   = Date(timeIntervalSince1970: Double(row.updatedAtMs) / 1000.0)
     let repoAlias = row.repoPath.map { URL(fileURLWithPath: $0).lastPathComponent }
@@ -205,7 +206,7 @@ private func makeSingleCursorSession(_ row: CursorComposerRow) -> ParsedSession 
         linesAdded: row.linesAdded,
         linesRemoved: row.linesRemoved,
         filesTouched: row.filesChanged,
-        tokens: 0,
+        tokens: tokens,
         model: "cursor",
         repoAlias: repoAlias,
         gitBranch: row.gitBranch,
@@ -213,8 +214,14 @@ private func makeSingleCursorSession(_ row: CursorComposerRow) -> ParsedSession 
     )
 }
 
-/// Reads bubble timestamps for a given composer session from cursorDiskKV
-private func getCursorBubbleTimestamps(composerId: String) -> [Date] {
+/// Reads bubble timestamps and token counts for a given composer session from cursorDiskKV
+private struct BubbleData {
+    let timestamp: Date?
+    let inputTokens: Int
+    let outputTokens: Int
+}
+
+private func getCursorBubbleData(composerId: String) -> [BubbleData] {
     var db: OpaquePointer?
     guard sqlite3_open_v2(cursorDBPath, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_NOMUTEX, nil) == SQLITE_OK else {
         return []
@@ -222,7 +229,8 @@ private func getCursorBubbleTimestamps(composerId: String) -> [Date] {
     defer { sqlite3_close(db) }
     sqlite3_busy_timeout(db, 5000)
 
-    let sql = "SELECT value FROM cursorDiskKV WHERE key LIKE 'bubbleId:\(composerId):%' LIMIT 500"
+    // Use exact key length (82 chars) to avoid malformed entries
+    let sql = "SELECT value FROM cursorDiskKV WHERE length(key) = 82 AND key LIKE 'bubbleId:\(composerId):%'"
     var stmt: OpaquePointer?
     guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
     defer { sqlite3_finalize(stmt) }
@@ -230,18 +238,30 @@ private func getCursorBubbleTimestamps(composerId: String) -> [Date] {
     let isoFormatter = ISO8601DateFormatter()
     isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
-    var timestamps: [Date] = []
+    var bubbles: [BubbleData] = []
 
     while sqlite3_step(stmt) == SQLITE_ROW {
         guard let blob = sqlite3_column_text(stmt, 0) else { continue }
         let jsonStr = String(cString: blob)
         guard let data = jsonStr.data(using: .utf8),
-              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let createdAt = obj["createdAt"] as? String,
-              let date = isoFormatter.date(from: createdAt)
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else { continue }
-        timestamps.append(date)
+
+        let timestamp = (obj["createdAt"] as? String).flatMap { isoFormatter.date(from: $0) }
+
+        var inputTokens = 0
+        var outputTokens = 0
+        if let tc = obj["tokenCount"] as? [String: Any] {
+            inputTokens  = tc["inputTokens"]  as? Int ?? 0
+            outputTokens = tc["outputTokens"] as? Int ?? 0
+        }
+
+        bubbles.append(BubbleData(timestamp: timestamp, inputTokens: inputTokens, outputTokens: outputTokens))
     }
 
-    return timestamps.sorted()
+    return bubbles
+}
+
+private func getCursorBubbleTimestamps(composerId: String) -> [Date] {
+    getCursorBubbleData(composerId: composerId).compactMap { $0.timestamp }.sorted()
 }
