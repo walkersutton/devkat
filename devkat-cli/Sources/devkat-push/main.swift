@@ -172,27 +172,10 @@ func runLogin() {
             print("devkat-push: ✓ logged in as \(email)")
         }
         try saveCredentials(creds)
-        syncNewestSessionAfterLogin()
+        installDaemon()
     } catch {
         print("devkat-push: login failed – \(error.localizedDescription)")
         exit(1)
-    }
-}
-
-private func syncNewestSessionAfterLogin() {
-    print("devkat-push: syncing your latest session…")
-
-    guard let newest = newestParsedSessionAcrossAllSources() else {
-        print("devkat-push: no local sessions found yet; daemon will keep watching")
-        return
-    }
-
-    do {
-        print("devkat-push: auto-detected newest session from \(newest.label)")
-        try writeSession(newest.session)
-        printSummary(newest.session)
-    } catch {
-        print("devkat-push: initial sync skipped – \(error.localizedDescription)")
     }
 }
 
