@@ -271,7 +271,7 @@ private enum StickerGenerator {
         let triLabelFont = UIFont(name: "Baskerville-Bold", size: 26) ?? .boldSystemFont(ofSize: 26)
         let triValueFont = UIFont(name: "Baskerville-BoldItalic", size: 68) ?? .boldSystemFont(ofSize: 68)
         let triUnitFont  = UIFont(name: "Baskerville-Bold", size: 22) ?? .boldSystemFont(ofSize: 22)
-        makeRenderer().image { ctx in
+        return makeRenderer().image { ctx in
             ctx.cgContext.clear(CGRect(origin: .zero, size: size))
             let spacing: CGFloat = 32
             let colW = (size.width - margin * 2 - spacing * 2) / 3
