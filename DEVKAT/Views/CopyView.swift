@@ -193,9 +193,9 @@ private enum StickerGenerator {
     private static let dim     = UIColor.white.withAlphaComponent(0.5)
     private static let blue    = UIColor(red: 0, green: 0.478, blue: 1, alpha: 1)
     private static let margin: CGFloat = 72
-    private static let labelFont = UIFont(name: "Baskerville", size: 36) ?? .systemFont(ofSize: 36)
-    private static let valueFont = UIFont(name: "Baskerville-Italic", size: 96) ?? .italicSystemFont(ofSize: 96)
-    private static let unitFont  = UIFont(name: "Baskerville", size: 32) ?? .systemFont(ofSize: 32)
+    private static let labelFont = UIFont(name: "Baskerville-Bold", size: 36) ?? .boldSystemFont(ofSize: 36)
+    private static let valueFont = UIFont(name: "Baskerville-BoldItalic", size: 96) ?? .boldSystemFont(ofSize: 96)
+    private static let unitFont  = UIFont(name: "Baskerville-Bold", size: 32) ?? .boldSystemFont(ofSize: 32)
 
     // Transparent 1080×1080 canvas
     private static func makeRenderer() -> UIGraphicsImageRenderer {
@@ -268,8 +268,8 @@ private enum StickerGenerator {
             let bubbleText = "\(SessionFormatting.duration(session.activeDuration)), \(burn)"
             let subText    = "Claude Monkey \(df.string(from: session.startedAt))"
 
-            let bubbleFont = UIFont.systemFont(ofSize: 52, weight: .regular)
-            let subFont    = UIFont.systemFont(ofSize: 36, weight: .regular)
+            let bubbleFont = UIFont.systemFont(ofSize: 52, weight: .bold)
+            let subFont    = UIFont.systemFont(ofSize: 36, weight: .bold)
 
             let bubbleStr = NSAttributedString(string: bubbleText, attributes: [.font: bubbleFont, .foregroundColor: UIColor.white])
             let subStr    = NSAttributedString(string: subText, attributes: [.font: subFont, .foregroundColor: UIColor.white.withAlphaComponent(0.8)])
