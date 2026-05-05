@@ -210,12 +210,9 @@ private enum StickerGenerator {
         makeRenderer().image { ctx in
             ctx.cgContext.clear(CGRect(origin: .zero, size: size))
 
-            let valStr  = NSAttributedString(string: value,
-                attrs([.font: valueFont, .foregroundColor: white]))
-            let lblStr  = NSAttributedString(string: label.uppercased(),
-                attrs([.font: labelFont, .foregroundColor: dim, .kern: 3.0]))
-            let unitStr = unit.map { NSAttributedString(string: $0,
-                attrs([.font: unitFont, .foregroundColor: dim])) }
+            let valStr  = NSAttributedString(string: value, attributes: [.font: valueFont, .foregroundColor: white])
+            let lblStr  = NSAttributedString(string: label.uppercased(), attributes: [.font: labelFont, .foregroundColor: dim, .kern: 3.0])
+            let unitStr = unit.map { NSAttributedString(string: $0, attributes: [.font: unitFont, .foregroundColor: dim]) }
 
             let cx = size.width / 2
             let valSz = valStr.size()
@@ -274,10 +271,8 @@ private enum StickerGenerator {
             let bubbleFont = UIFont.systemFont(ofSize: 52, weight: .regular)
             let subFont    = UIFont.systemFont(ofSize: 36, weight: .regular)
 
-            let bubbleStr = NSAttributedString(string: bubbleText,
-                attrs([.font: bubbleFont, .foregroundColor: UIColor.white]))
-            let subStr    = NSAttributedString(string: subText,
-                attrs([.font: subFont, .foregroundColor: UIColor.white.withAlphaComponent(0.8)]))
+            let bubbleStr = NSAttributedString(string: bubbleText, attributes: [.font: bubbleFont, .foregroundColor: UIColor.white])
+            let subStr    = NSAttributedString(string: subText, attributes: [.font: subFont, .foregroundColor: UIColor.white.withAlphaComponent(0.8)])
 
             let pad: CGFloat = 44
             let bubbleSz = bubbleStr.size()
@@ -306,14 +301,10 @@ private enum StickerGenerator {
     // Helper: draw a label + value column at x
     private static func drawStatColumn(slot: StatSlot, x: CGFloat, colW: CGFloat,
                                         ctx: CGContext, headerLabel: String? = nil) {
-        let valStr = NSAttributedString(string: slot.value,
-            attrs([.font: valueFont, .foregroundColor: white]))
-        let lblStr = NSAttributedString(string: slot.label.uppercased(),
-            attrs([.font: labelFont, .foregroundColor: dim, .kern: 2.0]))
-        let unitStr = slot.unit.map { NSAttributedString(string: $0,
-            attrs([.font: unitFont, .foregroundColor: dim])) }
-        let hdrStr = headerLabel.map { NSAttributedString(string: $0,
-            attrs([.font: unitFont, .foregroundColor: dim])) }
+        let valStr  = NSAttributedString(string: slot.value, attributes: [.font: valueFont, .foregroundColor: white])
+        let lblStr  = NSAttributedString(string: slot.label.uppercased(), attributes: [.font: labelFont, .foregroundColor: dim, .kern: 2.0])
+        let unitStr = slot.unit.map { NSAttributedString(string: $0, attributes: [.font: unitFont, .foregroundColor: dim]) }
+        let hdrStr  = headerLabel.map { NSAttributedString(string: $0, attributes: [.font: unitFont, .foregroundColor: dim]) }
 
         let gap: CGFloat = 14
         let valSz = valStr.size()
@@ -329,7 +320,6 @@ private enum StickerGenerator {
         unitStr?.draw(at: CGPoint(x: x, y: y))
     }
 
-    private static func attrs(_ d: [NSAttributedString.Key: Any]) -> [NSAttributedString.Key: Any] { d }
 }
 
 // MARK: – Shared render helper (now just a thin shim)
