@@ -16,7 +16,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 # ── Output sizes ──────────────────────────────────────────────────────────────
-IPHONE_W, IPHONE_H = 1290, 2796   # iPhone 6.7" Pro Max
+IPHONE_W, IPHONE_H = 1284, 2778   # iPhone 6.5" / 6.7" compatible (App Store required)
 IPAD_W,   IPAD_H   = 2048, 2732   # iPad Pro 12.9"
 
 # ── Phone frame appearance ────────────────────────────────────────────────────
