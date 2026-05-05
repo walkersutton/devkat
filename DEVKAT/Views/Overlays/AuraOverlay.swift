@@ -42,7 +42,7 @@ struct AuraOverlay: View {
             VStack(spacing: 4) {
                 Text(slot.label)
                     .font(.custom("Baskerville-Bold", size: 12))
-                    .foregroundStyle(Color.white.opacity(0.5))
+                    .foregroundStyle(.white)
                 Text(slot.formattedValueWithUnit)
                     .font(.custom("Baskerville-BoldItalic", size: 17))
                     .foregroundStyle(.white)
@@ -86,7 +86,7 @@ struct AuraDoubleOverlay: View {
         VStack(spacing: 3) {
             Text(slot.label)
                 .font(.custom("Baskerville-Bold", size: 10))
-                .foregroundStyle(Color.white.opacity(0.5))
+                .foregroundStyle(.white)
             Text(slot.formattedValueWithUnit)
                 .font(.custom("Baskerville-BoldItalic", size: 14))
                 .foregroundStyle(.white)
@@ -106,7 +106,7 @@ struct AuraTripleOverlay: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(headerLabel)
                     .font(.custom("Baskerville-Bold", size: 8))
-                    .foregroundStyle(Color.white.opacity(0.5))
+                    .foregroundStyle(.white)
                 HStack(alignment: .firstTextBaseline, spacing: 18) {
                     ForEach(slots) { slot in
                         Text(slot.formattedValueWithUnit)
@@ -127,7 +127,7 @@ struct AuraTripleOverlay: View {
                         if showLabels {
                             Text(slot.label)
                                 .font(.custom("Baskerville-Bold", size: 7))
-                                .foregroundStyle(Color.white.opacity(0.5))
+                                .foregroundStyle(.white)
                         }
                         Text(slot.formattedValueWithUnit)
                             .font(.custom("Baskerville-BoldItalic", size: 10))

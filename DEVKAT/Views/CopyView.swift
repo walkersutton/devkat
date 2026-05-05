@@ -191,7 +191,7 @@ private enum StickerGenerator {
 
     private static let size    = CGSize(width: 1080, height: 1080)
     private static let white   = UIColor.white
-    private static let dim     = UIColor.white.withAlphaComponent(0.5)
+    private static let dim     = UIColor.white  // labels same opacity as values
     private static let blue    = UIColor(red: 0, green: 0.478, blue: 1, alpha: 1)
     private static let margin: CGFloat = 72
     private static let labelFont: UIFont = {
