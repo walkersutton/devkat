@@ -130,7 +130,9 @@ def load_font(size: int) -> ImageFont.FreeTypeFont:
 
 
 def render_card(screenshot: Image.Image, lines: list[str],
-                card_w: int, card_h: int) -> Image.Image:
+                card_w: int, card_h: int,
+                phone_y_ratio: float = PHONE_Y_RATIO,
+                bottom_pad_ratio: float = BOTTOM_PAD_RATIO) -> Image.Image:
     """Render a card at any size — all layout values scale proportionally."""
     card = Image.new("RGB", (card_w, card_h), CARD_BG)
     draw = ImageDraw.Draw(card)
@@ -147,8 +149,8 @@ def render_card(screenshot: Image.Image, lines: list[str],
         text, font=font, fill=(10, 10, 10), spacing=spacing, align="center"
     )
 
-    phone_y         = round(card_h * PHONE_Y_RATIO) + content_off
-    bottom_padding  = round(card_h * BOTTOM_PAD_RATIO)
+    phone_y         = round(card_h * phone_y_ratio) + content_off
+    bottom_padding  = round(card_h * bottom_pad_ratio)
     max_w_by_height = round((card_h - phone_y - bottom_padding) / PHONE_ASPECT)
     desired_w       = round(card_w * PHONE_WIDTH_RATIO)
     phone_w         = min(desired_w, max_w_by_height)
@@ -180,7 +182,8 @@ def main() -> None:
         card.save(cards_dir / f"{slug}-card.png")
         print(f"  ✓ cards/{slug}-card.png")
 
-        ipad_card = render_card(screenshot, item["lines"], IPAD_W, IPAD_H)
+        ipad_card = render_card(screenshot, item["lines"], IPAD_W, IPAD_H,
+                                phone_y_ratio=0.185, bottom_pad_ratio=0.025)
         ipad_card.save(ipad_cards_dir / f"{slug}-ipad-card.png")
         print(f"  ✓ ipad-cards/{slug}-ipad-card.png")
 
