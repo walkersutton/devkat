@@ -60,12 +60,6 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
 
-            if app.isLoadingSessions {
-                ProgressView()
-                    .tint(.white)
-                    .frame(width: 32, height: 32)
-            }
-
             Spacer()
 
             HStack(alignment: .center, spacing: 8) {
