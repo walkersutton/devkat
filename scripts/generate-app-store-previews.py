@@ -192,6 +192,30 @@ def main() -> None:
         shadow.save(renderings_dir / f"{slug}-rendering.png")
         print(f"  ✓ renderings/{slug}-rendering.png")
 
+    # App icon rendering
+    icon_src  = Path(__file__).parent.parent / "DEVKAT/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+    if icon_src.exists():
+        CARD_SIZE = 1600
+        ICON_SIZE = 1100
+        RADIUS    = round(ICON_SIZE * 0.225)
+
+        def _rounded_icon(img: Image.Image) -> Image.Image:
+            icon = img.resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS).convert("RGBA")
+            ss   = 4
+            mask = Image.new("L", (ICON_SIZE * ss, ICON_SIZE * ss), 0)
+            ImageDraw.Draw(mask).rounded_rectangle(
+                (0, 0, ICON_SIZE * ss - 1, ICON_SIZE * ss - 1), radius=RADIUS * ss, fill=255
+            )
+            icon.putalpha(mask.resize((ICON_SIZE, ICON_SIZE), Image.LANCZOS))
+            return icon
+
+        canvas = Image.new("RGBA", (CARD_SIZE, CARD_SIZE), (*CARD_BG, 255))
+        offset = (CARD_SIZE - ICON_SIZE) // 2
+        canvas.alpha_composite(_rounded_icon(Image.open(icon_src)), (offset, offset))
+        icon_out = OUT_DIR / "app-icon-rendering.png"
+        canvas.convert("RGB").save(icon_out)
+        print(f"  ✓ app-icon-rendering.png")
+
 
 if __name__ == "__main__":
     main()
