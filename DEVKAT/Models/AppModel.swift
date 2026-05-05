@@ -35,6 +35,21 @@ final class AppModel {
         selectedSession = nil
     }
 
+    @MainActor
+    func deleteAccount() async throws {
+        guard let tokens = AuthTokens.stored else { throw SupabaseError.notLoggedIn }
+
+        do {
+            try await SupabaseService.shared.deleteCurrentUser(token: tokens.accessToken)
+        } catch SupabaseError.http(401, _) {
+            let refreshed = try await SupabaseService.shared.refreshTokens(tokens.refreshToken)
+            refreshed.persist()
+            try await SupabaseService.shared.deleteCurrentUser(token: refreshed.accessToken)
+        }
+
+        signOut()
+    }
+
     // MARK: - Fetch
 
     @MainActor
