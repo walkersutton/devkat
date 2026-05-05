@@ -8,11 +8,13 @@ enum OverlayPreset: String, CaseIterable, Identifiable {
     @ViewBuilder
     func view(for slot: StatSlot,
               showChevron: Bool = false,
-              onChevronTap: (() -> Void)? = nil) -> some View {
+              onChevronTap: (() -> Void)? = nil,
+              export: Bool = false) -> some View {
         AuraOverlay(
             slot: slot,
             showChevron: showChevron,
-            onChevronTap: onChevronTap
+            onChevronTap: onChevronTap,
+            export: export
         )
     }
 }

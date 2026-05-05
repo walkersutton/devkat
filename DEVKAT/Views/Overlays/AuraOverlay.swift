@@ -35,6 +35,7 @@ struct AuraOverlay: View {
     let slot: StatSlot
     var showChevron: Bool = false
     var onChevronTap: (() -> Void)?
+    var export: Bool = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -63,13 +64,14 @@ struct AuraOverlay: View {
                 .padding(14)
             }
         }
-        .background(Theme.surface)
+        .background(export ? Color.clear : Theme.surface)
     }
 }
 
 struct AuraDoubleOverlay: View {
     let left: StatSlot
     let right: StatSlot
+    var export: Bool = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -77,7 +79,7 @@ struct AuraDoubleOverlay: View {
             statColumn(right)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.surface)
+        .background(export ? Color.clear : Theme.surface)
     }
 
     private func statColumn(_ slot: StatSlot) -> some View {
@@ -97,11 +99,10 @@ struct AuraTripleOverlay: View {
     let slots: [StatSlot]
     var showLabels: Bool = true
     var headerLabel: String? = nil
+    var export: Bool = false
 
     var body: some View {
         if let headerLabel {
-            // Left-aligned layout: header sits directly above values,
-            // items use natural widths with consistent gap between them.
             VStack(alignment: .leading, spacing: 4) {
                 Text(headerLabel)
                     .font(.custom("Baskerville", size: 8))
@@ -118,9 +119,8 @@ struct AuraTripleOverlay: View {
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .background(Theme.surface)
+            .background(export ? Color.clear : Theme.surface)
         } else {
-            // Centered equal-column layout used by the activity overlay.
             HStack(spacing: 0) {
                 ForEach(slots) { slot in
                     VStack(spacing: 2) {
@@ -139,13 +139,14 @@ struct AuraTripleOverlay: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.surface)
+            .background(export ? Color.clear : Theme.surface)
         }
     }
 }
 
 struct AuraMessageOverlay: View {
     let session: Session
+    var export: Bool = false
 
     private var timeString: String {
         let f = DateFormatter()
@@ -183,6 +184,6 @@ struct AuraMessageOverlay: View {
         }
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
-        .background(Theme.surface)
+        .background(export ? Color.clear : Theme.surface)
     }
 }
