@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Photos
 
 struct CopyView: View {
     @Environment(AppModel.self) private var app
@@ -207,6 +208,20 @@ private func renderView<V: View>(_ view: V, size: CGSize) -> UIImage? {
     }
 }
 
+// MARK: – Save helper: write raw PNG bytes → PHPhotoLibrary (preserves transparency)
+
+private func saveTransparentPNG(_ image: UIImage) {
+    guard let data = image.pngData() else { return }
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString + ".png")
+    guard (try? data.write(to: url)) != nil else { return }
+    PHPhotoLibrary.shared().performChanges({
+        PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: url)
+    }) { _, _ in
+        try? FileManager.default.removeItem(at: url)
+    }
+}
+
 // MARK: – Overlay Tile
 
 private struct OverlayTile: View {
@@ -246,7 +261,7 @@ private struct OverlayTile: View {
 
     private func save() {
         guard let img = render() else { return }
-        UIImageWriteToSavedPhotosAlbum(img, nil, nil, nil)
+        saveTransparentPNG(img)
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         onSave?()
     }
@@ -289,7 +304,7 @@ private struct DoubleTile: View {
 
     private func save() {
         guard let img = render() else { return }
-        UIImageWriteToSavedPhotosAlbum(img, nil, nil, nil)
+        saveTransparentPNG(img)
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         onSave?()
     }
@@ -331,7 +346,7 @@ private struct TripleTile: View {
 
     private func save() {
         guard let img = render() else { return }
-        UIImageWriteToSavedPhotosAlbum(img, nil, nil, nil)
+        saveTransparentPNG(img)
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         onSave?()
     }
@@ -371,7 +386,7 @@ private struct MessageTile: View {
 
     private func save() {
         guard let img = render() else { return }
-        UIImageWriteToSavedPhotosAlbum(img, nil, nil, nil)
+        saveTransparentPNG(img)
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         onSave?()
     }
@@ -543,7 +558,7 @@ private struct WeeklyTripleTile: View {
 
     private func save() {
         guard let img = render() else { return }
-        UIImageWriteToSavedPhotosAlbum(img, nil, nil, nil)
+        saveTransparentPNG(img)
         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
         showToast("Saved!")
     }

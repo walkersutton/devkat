@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Devkat App — Support</title>
+  <meta name="description" content="Support, contact, and help for the Devkat App on iOS." />
+  <meta name="theme-color" content="#111111" />
+  <link rel="canonical" href="https://kahnxa.github.io/devkat/" />
+  <style>
+    :root {
+      --bg: #faf8f4;
+      --ink: #111;
+      --muted: #555;
+      --rule: #e6e2da;
+      --accent: #b4541f;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #14110d;
+        --ink: #f1ece2;
+        --muted: #a8a195;
+        --rule: #2a251e;
+        --accent: #e88a4e;
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-serif, "New York", Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 64px 24px 96px;
+    }
+    header { margin-bottom: 48px; }
+    .eyebrow {
+      font-family: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 12px;
+    }
+    h1 {
+      font-size: 44px;
+      line-height: 1.05;
+      margin: 0 0 12px;
+      letter-spacing: -0.01em;
+    }
+    .lede {
+      color: var(--muted);
+      margin: 0;
+      font-size: 19px;
+    }
+    section {
+      border-top: 1px solid var(--rule);
+      padding-top: 28px;
+      margin-top: 36px;
+    }
+    h2 {
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+      font-family: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+      margin: 0 0 16px;
+    }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+    a:hover { opacity: 0.75; }
+    .contact-email {
+      display: inline-block;
+      font-size: 22px;
+      margin-top: 4px;
+    }
+    dl { margin: 0; }
+    dt {
+      font-weight: 600;
+      margin-top: 18px;
+    }
+    dt:first-child { margin-top: 0; }
+    dd {
+      margin: 6px 0 0;
+      color: var(--muted);
+    }
+    footer {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+      font-size: 13px;
+      color: var(--muted);
+      font-family: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+    }
+    footer a { color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Devkat App for iOS</p>
+      <h1>Support</h1>
+      <p class="lede">Need a hand, found a bug, or have a feature request? I read every message.</p>
+    </header>
+
+    <section>
+      <h2>Contact</h2>
+      <p>The fastest way to reach me is email. I usually reply within 1–2 business days.</p>
+      <a class="contact-email" href="mailto:xavier@alleykat.app?subject=Devkat%20App%20support">xavier@alleykat.app</a>
+      <p style="margin-top:18px;color:var(--muted);font-size:15px;">
+        When emailing about a bug, it helps to include your iOS version, device model, and the app version (Settings → About inside the app).
+      </p>
+    </section>
+
+    <section>
+      <h2>Frequently asked</h2>
+      <dl>
+        <dt>How do I report a bug?</dt>
+        <dd>Email <a href="mailto:xavier@alleykat.app?subject=Devkat%20App%20bug">xavier@alleykat.app</a> with a short description and a screenshot or screen recording if possible.</dd>
+
+        <dt>How do I request a feature?</dt>
+        <dd>Same address — feature ideas are welcome and I genuinely read them.</dd>
+
+        <dt>How do I delete my account or data?</dt>
+        <dd>Email <a href="mailto:xavier@alleykat.app?subject=Devkat%20App%20account%20deletion">xavier@alleykat.app</a> from the address tied to your account and I'll permanently delete it within 7 days.</dd>
+
+        <dt>Where can I read the privacy policy?</dt>
+        <dd><a href="privacy.html">View the privacy policy</a>.</dd>
+
+        <dt>Which devices are supported?</dt>
+        <dd>iPhone and iPad running iOS 17 or later.</dd>
+      </dl>
+    </section>
+
+    <footer>
+      <div class="row">
+        <span>© <span id="year"></span> Devkat App</span>
+        <a href="privacy.html">Privacy</a>
+        <a href="mailto:xavier@alleykat.app">Email</a>
+      </div>
+    </footer>
+  </main>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>

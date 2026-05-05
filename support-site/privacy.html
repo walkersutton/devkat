@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Devkat App — Privacy Policy</title>
+  <meta name="description" content="Privacy policy for the Devkat App on iOS." />
+  <link rel="canonical" href="https://kahnxa.github.io/devkat/privacy.html" />
+  <style>
+    :root { --bg:#faf8f4; --ink:#111; --muted:#555; --rule:#e6e2da; --accent:#b4541f; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#14110d; --ink:#f1ece2; --muted:#a8a195; --rule:#2a251e; --accent:#e88a4e; }
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--ink);
+      font-family: ui-serif, "New York", Georgia, "Times New Roman", serif;
+      font-size: 18px; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    main { max-width: 680px; margin: 0 auto; padding: 64px 24px 96px; }
+    .eyebrow {
+      font-family: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+      font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 12px;
+    }
+    h1 { font-size: 38px; line-height: 1.1; margin: 0 0 8px; letter-spacing: -0.01em; }
+    .updated { color: var(--muted); margin: 0 0 36px; font-size: 14px; font-family: ui-sans-serif, system-ui, sans-serif; }
+    h2 {
+      font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--muted); font-weight: 600;
+      font-family: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+      margin: 36px 0 12px;
+    }
+    a { color: var(--accent); }
+    p { margin: 0 0 14px; }
+    ul { padding-left: 20px; margin: 0 0 14px; }
+    .back {
+      display: inline-block; margin-top: 48px;
+      font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Devkat App for iOS</p>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Effective date: May 4, 2026</p>
+
+    <p>Devkat ("we", "our", "the app") turns your AI coding sessions into shareable visual cards. This policy explains what data we collect, how we use it, and the controls you have.</p>
+
+    <h2>1. Data We Collect</h2>
+    <p><strong>Account credentials.</strong> When you sign up we store your email address and a securely hashed password via Supabase Auth. We never see or store your plaintext password.</p>
+    <p><strong>Session statistics.</strong> When you push a session from your machine, we receive aggregate stats only: duration, lines added/removed, file count, token usage, model name, and timestamps. We do not receive source code, file contents, file paths, environment variables, or prompt/response text.</p>
+    <p><strong>Device information.</strong> We may collect basic device identifiers (iOS version, device model) for crash reporting and analytics. This data is anonymised and cannot be linked to your source code.</p>
+
+    <h2>2. Data We Never Collect</h2>
+    <p><strong>Source code or diffs.</strong> Devkat's CLI parser computes statistics locally on your machine. Raw code never leaves your device.</p>
+    <p><strong>File paths.</strong> Paths are counted but not transmitted. The "Scope" stat is a number, not a list of filenames.</p>
+    <p><strong>Secrets or credentials.</strong> The CLI does not read .env files, API keys, or tokens from your codebase. A pre-flight scan strips any secrets that might appear in session metadata before upload.</p>
+    <p><strong>Prompt or response text.</strong> The content of your conversations with AI assistants is never sent to our servers.</p>
+
+    <h2>3. How We Use Your Data</h2>
+    <p><strong>Display your sessions.</strong> Statistics are stored so you can view your session history and generate overlay cards within the app.</p>
+    <p><strong>Improve the product.</strong> We may use anonymised, aggregate usage patterns (e.g. average session length across all users) to improve Devkat. We will never sell individual data or share it with third parties for advertising.</p>
+
+    <h2>4. Image Composition & Sharing</h2>
+    <p>Overlay cards are rendered entirely on your device. When you copy or save an image, it goes to your local clipboard or camera roll. Devkat does not upload, store, or have access to the images you create. What you share and where you share it is entirely your choice.</p>
+
+    <h2>5. Data Storage & Security</h2>
+    <p>Your session data is stored in Supabase (hosted on AWS) with row-level security — each user can only access their own records. Auth tokens are stored in your device's Keychain. All network communication uses TLS 1.2+.</p>
+
+    <h2>6. Data Retention & Deletion</h2>
+    <p>You can delete your account at any time from Settings. When you delete your account, all associated session data is permanently removed from our servers. There is no recovery period — deletion is immediate and irreversible.</p>
+
+    <h2>7. Third-Party Services</h2>
+    <p>Supabase — authentication and database hosting.<br />
+    Apple — app distribution, crash reporting via Xcode Organizer.</p>
+    <p>We do not use any third-party analytics SDKs, advertising networks, or tracking pixels.</p>
+
+    <h2>8. Children's Privacy</h2>
+    <p>Devkat is not directed at children under 13. We do not knowingly collect information from children under 13. If you believe a child has provided us with personal data, please contact us and we will delete it.</p>
+
+    <h2>9. Changes to This Policy</h2>
+    <p>We may update this policy from time to time. If we make material changes, we will notify you through the app or via email. Your continued use of Devkat after changes take effect constitutes acceptance of the updated policy.</p>
+
+    <h2>10. Contact</h2>
+    <p>Questions or concerns? Reach us at <a href="mailto:xavier@alleykat.app?subject=Devkat%20App%20privacy">xavier@alleykat.app</a>.</p>
+
+    <a class="back" href="index.html">← Back to support</a>
+  </main>
+</body>
+</html>

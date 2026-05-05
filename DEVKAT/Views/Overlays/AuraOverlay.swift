@@ -43,10 +43,15 @@ struct AuraOverlay: View {
                 Text(slot.label)
                     .font(.custom("Baskerville-Bold", size: 12))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
                 Text(slot.formattedValueWithUnit)
                     .font(.custom("Baskerville-BoldItalic", size: 17))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.horizontal, 8)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if showChevron {
@@ -87,10 +92,15 @@ struct AuraDoubleOverlay: View {
             Text(slot.label)
                 .font(.custom("Baskerville-Bold", size: 10))
                 .foregroundStyle(.white)
+                .lineLimit(1)
             Text(slot.formattedValueWithUnit)
                 .font(.custom("Baskerville-BoldItalic", size: 14))
                 .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
@@ -179,6 +189,7 @@ struct AuraMessageOverlay: View {
             Text("Claude Monkey \(timeString)")
                 .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(Color.white.opacity(0.8))
+                .padding(.bottom, 3)
 
             Spacer(minLength: 0)
         }
