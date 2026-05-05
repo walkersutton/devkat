@@ -233,23 +233,20 @@ private enum StickerGenerator {
         makeRenderer().image { ctx in
             ctx.cgContext.clear(CGRect(origin: .zero, size: size))
 
-            let valStr  = NSAttributedString(string: value, attributes: [.font: valueFont, .foregroundColor: white])
-            let lblStr  = NSAttributedString(string: label.uppercased(), attributes: [.font: labelFont, .foregroundColor: dim, .kern: 3.0])
-            let unitStr = unit.map { NSAttributedString(string: $0, attributes: [.font: unitFont, .foregroundColor: dim]) }
+            let combined = unit.map { "\(value) \($0)" } ?? value
+            let valStr  = NSAttributedString(string: combined, attributes: [.font: valueFont, .foregroundColor: white])
+            let lblStr  = NSAttributedString(string: label.uppercased(), attributes: [.font: labelFont, .foregroundColor: white, .kern: 3.0])
 
             let cx = size.width / 2
             let valSz = valStr.size()
             let lblSz = lblStr.size()
             let gap: CGFloat = 16
-            let totalH = lblSz.height + gap + valSz.height +
-                         (unitStr.map { gap / 2 + $0.size().height } ?? 0)
+            let totalH = lblSz.height + gap + valSz.height
             var y = (size.height - totalH) / 2
 
             lblStr.draw(at: CGPoint(x: cx - lblSz.width / 2, y: y))
             y += lblSz.height + gap
             valStr.draw(at: CGPoint(x: cx - valSz.width / 2, y: y))
-            y += valSz.height + gap / 2
-            unitStr?.draw(at: CGPoint(x: cx - (unitStr!.size().width) / 2, y: y))
         }
     }
 
@@ -334,23 +331,22 @@ private enum StickerGenerator {
         let lFont = lf ?? labelFont
         let vFont = vf ?? valueFont
         let uFont = uf ?? unitFont
-        let valStr  = NSAttributedString(string: slot.value, attributes: [.font: vFont, .foregroundColor: white])
+        // Combine value + unit on one line (matching the UI's formattedValueWithUnit)
+        let combined = slot.unit.map { "\(slot.value) \($0)" } ?? slot.value
+        let valStr  = NSAttributedString(string: combined, attributes: [.font: vFont, .foregroundColor: white])
         let lblStr  = NSAttributedString(string: slot.label.uppercased(), attributes: [.font: lFont, .foregroundColor: white, .kern: 2.0])
-        let unitStr = slot.unit.map { NSAttributedString(string: $0, attributes: [.font: uFont, .foregroundColor: white]) }
         let hdrStr  = headerLabel.map { NSAttributedString(string: $0, attributes: [.font: uFont, .foregroundColor: white]) }
 
         let gap: CGFloat = 14
         let valSz = valStr.size()
         let lblSz = lblStr.size()
-        let unitH = unitStr.map { $0.size().height + gap / 2 } ?? 0
-        let hdrH  = hdrStr.map  { $0.size().height + gap }     ?? 0
-        let totalH = hdrH + lblSz.height + gap + valSz.height + unitH
+        let hdrH  = hdrStr.map  { $0.size().height + gap } ?? 0
+        let totalH = hdrH + lblSz.height + gap + valSz.height
         var y = (size.height - totalH) / 2
 
         hdrStr.flatMap { s -> () in s.draw(at: CGPoint(x: x, y: y)); y += hdrH }
-        lblStr.draw(at: CGPoint(x: x, y: y));           y += lblSz.height + gap
-        valStr.draw(at: CGPoint(x: x, y: y));           y += valSz.height + gap / 2
-        unitStr?.draw(at: CGPoint(x: x, y: y))
+        lblStr.draw(at: CGPoint(x: x, y: y));  y += lblSz.height + gap
+        valStr.draw(at: CGPoint(x: x, y: y))
     }
 
 }
