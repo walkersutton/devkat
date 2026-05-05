@@ -185,7 +185,8 @@ struct CopyView: View {
 }
 
 // MARK: – Render helper: UIHostingController → UIGraphicsImageRenderer
-// Renders the exact SwiftUI view at `size` × 3 scale — pixel-identical to the on-screen tile.
+// Renders at the tile's natural on-screen size so spacing/fonts match exactly,
+// then outputs at 6× scale for a large shareable image.
 
 @MainActor
 private func renderView<V: View>(_ view: V, size: CGSize) -> UIImage? {
@@ -200,7 +201,7 @@ private func renderView<V: View>(_ view: V, size: CGSize) -> UIImage? {
 
     let format = UIGraphicsImageRendererFormat()
     format.opaque = false
-    format.scale  = 3
+    format.scale  = 6   // 6× of natural tile size → large crisp output
     return UIGraphicsImageRenderer(size: size, format: format).image { _ in
         hosting.view.drawHierarchy(in: hosting.view.bounds, afterScreenUpdates: true)
     }
@@ -252,7 +253,7 @@ private struct OverlayTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(preset.view(for: slot, export: true), size: CGSize(width: 360, height: 225))
+        renderView(preset.view(for: slot, export: true), size: CGSize(width: 175, height: 110))
     }
 }
 
@@ -295,7 +296,7 @@ private struct DoubleTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(AuraDoubleOverlay(left: left, right: right, export: true), size: CGSize(width: 360, height: 225))
+        renderView(AuraDoubleOverlay(left: left, right: right, export: true), size: CGSize(width: 175, height: 110))
     }
 }
 
@@ -337,7 +338,7 @@ private struct TripleTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(AuraTripleOverlay(slots: slots, export: true), size: CGSize(width: 360, height: 225))
+        renderView(AuraTripleOverlay(slots: slots, export: true), size: CGSize(width: 175, height: 110))
     }
 }
 
@@ -377,7 +378,7 @@ private struct MessageTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(AuraMessageOverlay(session: session, export: true), size: CGSize(width: 360, height: 180))
+        renderView(AuraMessageOverlay(session: session, export: true), size: CGSize(width: 175, height: 88))
     }
 }
 
@@ -557,6 +558,6 @@ private struct WeeklyTripleTile: View {
     @MainActor
     private func render() -> UIImage? {
         renderView(AuraTripleOverlay(slots: slots, showLabels: false, headerLabel: "This Week", export: true),
-                   size: CGSize(width: 360, height: 225))
+                   size: CGSize(width: 175, height: 110))
     }
 }
