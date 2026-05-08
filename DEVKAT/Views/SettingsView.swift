@@ -30,6 +30,15 @@ struct SettingsView: View {
                         }
                     }
 
+#if DEBUG
+                    settingsSection("Debug") {
+                        row(icon: "star.slash", label: "Reset Review Prompt") {
+                            app.debugResetReviewPromptState()
+                            dismiss()
+                        }
+                    }
+#endif
+
                     settingsSection("About") {
                         row(icon: "terminal", label: "Devkat") {}
                         divider

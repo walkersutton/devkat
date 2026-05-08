@@ -32,17 +32,17 @@ struct HomeView: View {
         VStack(spacing: 0) {
             titleBar
             Divider().background(Theme.border)
-            ScrollView {
-                if !app.leaderboard.isEmpty {
-                    leaderboardStrip
-                }
-                if app.sessions.isEmpty {
-                    if app.installations.isEmpty {
-                        setupState
-                    } else {
-                        waitingState
-                    }
+            if !app.leaderboard.isEmpty {
+                leaderboardStrip
+            }
+            if app.sessions.isEmpty {
+                if app.installations.isEmpty {
+                    setupState
                 } else {
+                    waitingState
+                }
+            } else {
+                ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24, pinnedViews: []) {
                         ForEach(grouped, id: \.label) { group in
                             section(label: group.label, items: group.items)
@@ -52,8 +52,8 @@ struct HomeView: View {
                     .padding(.top, 18)
                     .padding(.bottom, 100)
                 }
+                .refreshable { await app.fetchSessions() }
             }
-            .refreshable { await app.fetchSessions() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
@@ -197,8 +197,8 @@ struct HomeView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity)
-        .containerRelativeFrame(.vertical)
+        .padding(.bottom, 50)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var setupState: some View {
@@ -271,8 +271,8 @@ struct HomeView: View {
             checkConnectionButton
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity)
-        .containerRelativeFrame(.vertical)
+        .padding(.bottom, 50)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var checkConnectionButton: some View {
