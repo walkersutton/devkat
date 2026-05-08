@@ -361,32 +361,54 @@ struct HomeView: View {
             }
             .padding(.horizontal, 16)
 
-            HStack(spacing: 0) {
-                ForEach(Array(app.leaderboard.prefix(3).enumerated()), id: \.element.id) { index, entry in
-                    let alignment: HorizontalAlignment = index == 0 ? .leading : index == 1 ? .center : .trailing
-                    VStack(alignment: alignment, spacing: 4) {
-                        HStack(spacing: 6) {
-                            Text("\(index + 1)")
-                                .font(.system(size: 11, design: .monospaced).weight(.bold))
-                                .foregroundStyle(index == 0 ? Theme.logoGreen : Theme.textDim)
-                            Text(entry.displayName)
-                                .font(.system(size: 11, design: .monospaced).weight(.semibold))
-                                .foregroundStyle(Theme.text)
-                                .lineLimit(1)
-                                .fixedSize(horizontal: true, vertical: false)
-                            Text(leaderboardIcon(for: index))
-                                .font(.system(size: 12))
-                        }
-                        Text(entry.formattedTokens)
-                            .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(Theme.textMuted)
+            GeometryReader { proxy in
+                HStack(spacing: 0) {
+                    ForEach(Array(app.leaderboard.prefix(3).enumerated()), id: \.element.id) { index, entry in
+                        leaderboardEntry(index: index, entry: entry)
+                            .frame(
+                                width: proxy.size.width * leaderboardColumnWidth(for: index),
+                                alignment: leaderboardFrameAlignment(for: index)
+                            )
                     }
-                    .frame(maxWidth: .infinity, alignment: index == 0 ? .leading : index == 1 ? .center : .trailing)
                 }
             }
+            .frame(height: 32)
             .padding(.horizontal, 16)
         }
         .padding(.vertical, 14)
+    }
+
+    private func leaderboardEntry(index: Int, entry: LeaderboardEntry) -> some View {
+        let alignment: HorizontalAlignment = index == 0 ? .leading : index == 1 ? .center : .trailing
+        return VStack(alignment: alignment, spacing: 4) {
+            HStack(spacing: 6) {
+                Text("\(index + 1)")
+                    .font(.system(size: 11, design: .monospaced).weight(.bold))
+                    .foregroundStyle(index == 0 ? Theme.logoGreen : Theme.textDim)
+                    .fixedSize()
+                Text(entry.displayName)
+                    .font(.system(size: 11, design: .monospaced).weight(.semibold))
+                    .foregroundStyle(Theme.text)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                Text(leaderboardIcon(for: index))
+                    .font(.system(size: 12))
+                    .fixedSize()
+            }
+            .fixedSize(horizontal: true, vertical: false)
+
+            Text(entry.formattedTokens)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(Theme.textMuted)
+        }
+    }
+
+    private func leaderboardColumnWidth(for index: Int) -> CGFloat {
+        index == 1 ? 0.46 : 0.27
+    }
+
+    private func leaderboardFrameAlignment(for index: Int) -> Alignment {
+        index == 0 ? .leading : index == 1 ? .center : .trailing
     }
 
     private func leaderboardIcon(for index: Int) -> String {

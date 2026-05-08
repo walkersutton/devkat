@@ -165,6 +165,32 @@ actor SupabaseService {
         try checkStatus(response, data: data)
     }
 
+    // MARK: Feedback
+
+    func submitFeedback(token: String, kind: String, message: String?, appVersion: String) async throws {
+        struct FeedbackBody: Encodable {
+            let kind: String
+            let message: String?
+            let app_version: String
+        }
+
+        let url = base.appendingPathComponent("rest/v1/feedback")
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        req.setValue(anon, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.httpBody = try JSONEncoder().encode(FeedbackBody(
+            kind: kind,
+            message: message,
+            app_version: appVersion
+        ))
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkStatus(response, data: data)
+    }
+
     // MARK: Leaderboard
 
     func fetchLeaderboard(token: String) async throws -> [LeaderboardEntry] {
