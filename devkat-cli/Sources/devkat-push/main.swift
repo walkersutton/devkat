@@ -6,6 +6,8 @@ import Glibc
 #endif
 import DevKatParser
 
+let cliVersion = "0.3.9"
+
 let args = CommandLine.arguments
 let home = FileManager.default.homeDirectoryForCurrentUser
 let claudeDir = home.appendingPathComponent(".claude")

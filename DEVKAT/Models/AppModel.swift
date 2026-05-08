@@ -12,8 +12,6 @@ final class AppModel {
     var isLoadingSessions = false
     var availableCLIUpdate: String?
 
-    private static let lastDismissedCLIVersionKey = "lastDismissedCLIVersion"
-
     init() {
         if isLoggedIn { Task { await fetchSessions() } }
         NotificationCenter.default.addObserver(
@@ -24,11 +22,12 @@ final class AppModel {
             guard let self, self.isLoggedIn else { return }
             Task { await self.fetchSessions() }
         }
-        Task { await checkForCLIUpdate() }
     }
 
     // MARK: - CLI Update Check
 
+    /// Compares the user's installed CLI version (from installations table)
+    /// against the latest GitHub release. Shows update prompt if outdated.
     @MainActor
     func checkForCLIUpdate() async {
         guard let url = URL(string: "https://api.github.com/repos/runnon/devkat-releases/releases/latest") else { return }
@@ -42,18 +41,24 @@ final class AppModel {
         struct Release: Decodable { let tag_name: String }
         guard let release = try? JSONDecoder().decode(Release.self, from: data) else { return }
 
-        let latest = release.tag_name
-        let dismissed = UserDefaults.standard.string(forKey: Self.lastDismissedCLIVersionKey)
+        let latestTag = release.tag_name
+        let latestVersion = latestTag.hasPrefix("v") ? String(latestTag.dropFirst()) : latestTag
 
-        if dismissed != latest {
-            availableCLIUpdate = latest
+        let installedVersion = installations
+            .compactMap(\.cliVersion)
+            .sorted()
+            .last
+
+        if let installed = installedVersion {
+            if installed.compare(latestVersion, options: .numeric) == .orderedAscending {
+                availableCLIUpdate = latestTag
+            }
+        } else if !installations.isEmpty {
+            availableCLIUpdate = latestTag
         }
     }
 
     func dismissCLIUpdate() {
-        if let version = availableCLIUpdate {
-            UserDefaults.standard.set(version, forKey: Self.lastDismissedCLIVersionKey)
-        }
         availableCLIUpdate = nil
     }
 
@@ -124,5 +129,8 @@ final class AppModel {
             print("AppModel: leaderboard unavailable – \(error)")
             leaderboard = []
         }
+
+        // Check if CLI needs an update (non-blocking).
+        Task { await checkForCLIUpdate() }
     }
 }

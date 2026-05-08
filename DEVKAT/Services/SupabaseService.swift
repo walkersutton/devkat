@@ -127,7 +127,7 @@ actor SupabaseService {
     func fetchInstallations(token: String) async throws -> [Installation] {
         var comps = URLComponents(url: base.appendingPathComponent("rest/v1/installations"), resolvingAgainstBaseURL: false)!
         comps.queryItems = [
-            .init(name: "select", value: "hostname,installed_at,last_seen_at"),
+            .init(name: "select", value: "hostname,installed_at,last_seen_at,cli_version"),
             .init(name: "order",  value: "last_seen_at.desc"),
             .init(name: "limit",  value: "10"),
         ]

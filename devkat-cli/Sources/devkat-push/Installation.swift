@@ -9,6 +9,7 @@ import Foundation
 
 private struct UpsertInstallationParams: Encodable {
     let p_hostname: String
+    let p_cli_version: String
 }
 
 private func currentHostname() -> String {
@@ -37,7 +38,7 @@ func upsertInstallation() -> Bool {
     req.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
     req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
-    let params = UpsertInstallationParams(p_hostname: currentHostname())
+    let params = UpsertInstallationParams(p_hostname: currentHostname(), p_cli_version: cliVersion)
     do {
         req.httpBody = try JSONEncoder().encode(params)
     } catch {

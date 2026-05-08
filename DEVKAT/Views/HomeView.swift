@@ -73,7 +73,7 @@ struct HomeView: View {
                     showUpdatePrompt = false
                 }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.height(280)])
             .presentationDragIndicator(.visible)
             .presentationBackground(Color(hex: 0x1A1A1A))
         }
@@ -467,18 +467,18 @@ private struct CLIUpdateSheet: View {
     private let command = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat-releases/main/install.sh | sh"
 
     var body: some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 8) {
+        VStack(spacing: 16) {
+            VStack(spacing: 6) {
                 Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
-                    .font(.system(size: 36))
+                    .font(.system(size: 28))
                     .foregroundStyle(Theme.logoGreen)
 
                 Text("CLI Update Available")
-                    .font(.system(size: 17, design: .monospaced).weight(.bold))
+                    .font(.system(size: 15, design: .monospaced).weight(.bold))
                     .foregroundStyle(.white)
 
-                Text("Version \(version) is ready. Run this in your terminal to update:")
-                    .font(.system(size: 13, design: .monospaced))
+                Text("Version \(version) is ready. Run this in your terminal:")
+                    .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(Theme.textDim)
                     .multilineTextAlignment(.center)
             }
@@ -492,21 +492,21 @@ private struct CLIUpdateSheet: View {
                     copied = false
                 }
             } label: {
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Text(command)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.9))
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.leading)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.white.opacity(0.06))
                         .cornerRadius(8)
 
                     Text(copied ? "Copied!" : "Tap to copy")
                         .font(.system(size: 12, design: .monospaced).weight(.medium))
-                        .foregroundStyle(copied ? Theme.logoGreen : Theme.textDim)
+                        .foregroundStyle(Theme.logoGreen)
                 }
             }
             .buttonStyle(.plain)
@@ -515,14 +515,14 @@ private struct CLIUpdateSheet: View {
                 onDismiss()
             } label: {
                 Text("Dismiss")
-                    .font(.system(size: 14, design: .monospaced).weight(.medium))
+                    .font(.system(size: 13, design: .monospaced).weight(.medium))
                     .foregroundStyle(Theme.textDim)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 8)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
         }
-        .padding(24)
+        .padding(20)
         .frame(maxWidth: .infinity)
     }
 }
