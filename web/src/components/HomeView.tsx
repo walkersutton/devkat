@@ -166,9 +166,9 @@ function LeaderboardStrip({ entries }: { entries: LeaderboardEntry[] }) {
         </span>
         <div className="flex-1 h-px bg-border" />
       </div>
-      <div className="px-[16px] flex gap-[12px]">
+      <div className="px-[16px] grid grid-cols-3 gap-[12px]">
         {entries.slice(0, 3).map((entry, i) => (
-          <div key={entry.email} className="flex-1 flex flex-col gap-[4px]">
+          <div key={entry.email} className="flex flex-col gap-[4px] min-w-0">
             <div className="flex items-center gap-[6px]">
               <span
                 className="text-[11px] font-bold font-mono"
