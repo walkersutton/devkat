@@ -1,9 +1,12 @@
 import Foundation
 import Observation
+import OSLog
 import UIKit
 
 @Observable
 final class AppModel {
+    private static let log = Logger(subsystem: "app.devkat.ios", category: "AppModel")
+
     var selectedSession: Session?
     var sessions: [Session] = []
     var installations: [Installation] = []
@@ -15,6 +18,7 @@ final class AppModel {
 
     init() {
         ReviewPromptState.recordAppOpen()
+        Self.log.info("app_open count=\(ReviewPromptState.appOpenCount) version=\(ReviewPromptState.appVersion, privacy: .public) logged_in=\(self.isLoggedIn)")
         if isLoggedIn { Task { await fetchSessions() } }
         NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification,
@@ -33,15 +37,27 @@ final class AppModel {
     @MainActor
     func checkForCLIUpdate() async {
         guard let url = URL(string: "https://api.github.com/repos/runnon/devkat-releases/releases/latest") else { return }
+        Self.log.info("cli_update_check_started installations=\(self.installations.count)")
         var req = URLRequest(url: url)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         req.cachePolicy = .reloadIgnoringLocalCacheData
 
         guard let (data, response) = try? await URLSession.shared.data(for: req),
-              let http = response as? HTTPURLResponse, http.statusCode == 200 else { return }
+              let http = response as? HTTPURLResponse else {
+            Self.log.error("cli_update_check_failed reason=network_or_missing_response")
+            return
+        }
+
+        guard http.statusCode == 200 else {
+            Self.log.error("cli_update_check_failed status=\(http.statusCode)")
+            return
+        }
 
         struct Release: Decodable { let tag_name: String }
-        guard let release = try? JSONDecoder().decode(Release.self, from: data) else { return }
+        guard let release = try? JSONDecoder().decode(Release.self, from: data) else {
+            Self.log.error("cli_update_check_failed reason=decode")
+            return
+        }
 
         let latestTag = release.tag_name
         let latestVersion = latestTag.hasPrefix("v") ? String(latestTag.dropFirst()) : latestTag
@@ -51,17 +67,31 @@ final class AppModel {
             .sorted()
             .last
 
+        Self.log.info("cli_update_check_versions latest=\(latestVersion, privacy: .public) installed=\(installedVersion ?? "none", privacy: .public)")
+
         if let installed = installedVersion {
             if installed.compare(latestVersion, options: .numeric) == .orderedAscending {
                 availableCLIUpdate = latestTag
+                Self.log.info("cli_update_available latest_tag=\(latestTag, privacy: .public) installed=\(installed, privacy: .public)")
+            } else {
+                if availableCLIUpdate != nil {
+                    Self.log.info("cli_update_resolved latest=\(latestVersion, privacy: .public) installed=\(installed, privacy: .public)")
+                }
+                availableCLIUpdate = nil
+                Self.log.info("cli_update_not_needed latest=\(latestVersion, privacy: .public) installed=\(installed, privacy: .public)")
             }
         } else if !installations.isEmpty {
             availableCLIUpdate = latestTag
+            Self.log.info("cli_update_available latest_tag=\(latestTag, privacy: .public) installed=missing")
+        } else {
+            availableCLIUpdate = nil
+            Self.log.info("cli_update_skipped reason=no_installations")
         }
     }
 
     @MainActor
     func dismissCLIUpdate() {
+        Self.log.info("cli_update_prompt_dismissed version=\(self.availableCLIUpdate ?? "unknown", privacy: .public)")
         availableCLIUpdate = nil
         evaluateReviewPromptEligibility()
     }
@@ -70,21 +100,25 @@ final class AppModel {
 
     @MainActor
     func evaluateReviewPromptEligibility() {
+        let eligible = ReviewPromptState.isEligibleForPrompt
+        Self.log.info("review_prompt_eligibility logged_in=\(self.isLoggedIn) sessions=\(self.sessions.count) cli_update_active=\(self.availableCLIUpdate != nil) eligible=\(eligible)")
         guard isLoggedIn,
               !sessions.isEmpty,
               availableCLIUpdate == nil,
-              ReviewPromptState.isEligibleForPrompt else {
+              eligible else {
             return
         }
 
         ReviewPromptState.recordPromptShown()
         shouldShowReviewPrompt = true
+        Self.log.info("review_prompt_shown app_version=\(ReviewPromptState.appVersion, privacy: .public)")
     }
 
     @MainActor
     func recordPositiveReviewIntent() async {
         ReviewPromptState.recordPositiveResponse()
         shouldShowReviewPrompt = false
+        Self.log.info("review_positive_tapped")
         await submitReviewFeedback(kind: "review_positive", message: nil)
     }
 
@@ -92,16 +126,21 @@ final class AppModel {
     func recordNegativeReviewIntent() {
         ReviewPromptState.recordNegativeResponse()
         shouldShowReviewPrompt = false
+        Self.log.info("review_negative_tapped")
     }
 
     @MainActor
     func submitNegativeReviewFeedback(_ message: String) async {
         ReviewPromptState.recordFeedbackSubmitted()
+        Self.log.info("review_negative_feedback_submit_started chars=\(message.count)")
         await submitReviewFeedback(kind: "review_negative", message: message)
     }
 
     private func submitReviewFeedback(kind: String, message: String?) async {
-        guard let tokens = AuthTokens.stored else { return }
+        guard let tokens = AuthTokens.stored else {
+            Self.log.error("feedback_submit_skipped kind=\(kind, privacy: .public) reason=missing_tokens")
+            return
+        }
 
         do {
             do {
@@ -111,7 +150,9 @@ final class AppModel {
                     message: message,
                     appVersion: ReviewPromptState.appVersion
                 )
+                Self.log.info("feedback_submit_succeeded kind=\(kind, privacy: .public)")
             } catch SupabaseError.http(401, _) {
+                Self.log.info("feedback_submit_refreshing_token kind=\(kind, privacy: .public)")
                 let refreshed = try await SupabaseService.shared.refreshTokens(tokens.refreshToken)
                 refreshed.persist()
                 try await SupabaseService.shared.submitFeedback(
@@ -120,9 +161,10 @@ final class AppModel {
                     message: message,
                     appVersion: ReviewPromptState.appVersion
                 )
+                Self.log.info("feedback_submit_succeeded kind=\(kind, privacy: .public) after_refresh=true")
             }
         } catch {
-            print("AppModel: submit feedback error – \(error)")
+            Self.log.error("feedback_submit_failed kind=\(kind, privacy: .public) error=\(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -160,7 +202,11 @@ final class AppModel {
 
     @MainActor
     func fetchSessions() async {
-        guard let tokens = AuthTokens.stored else { return }
+        guard let tokens = AuthTokens.stored else {
+            Self.log.info("fetch_sessions_skipped reason=missing_tokens")
+            return
+        }
+        Self.log.info("fetch_sessions_started")
         isLoadingSessions = true
         defer { isLoadingSessions = false }
 
@@ -174,7 +220,7 @@ final class AppModel {
             }
         } catch {
             // Keep whatever we have; don't blank the screen on transient errors
-            print("AppModel: fetchSessions error – \(error)")
+            Self.log.error("fetch_sessions_failed error=\(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -185,12 +231,14 @@ final class AppModel {
         let (sList, iList) = try await (s, i)
         sessions = sList
         installations = iList
+        Self.log.info("load_all_succeeded sessions=\(sList.count) installations=\(iList.count)")
 
         // Leaderboard is optional — don't block sessions on it.
         do {
             leaderboard = try await SupabaseService.shared.fetchLeaderboard(token: token)
+            Self.log.info("leaderboard_loaded count=\(self.leaderboard.count)")
         } catch {
-            print("AppModel: leaderboard unavailable – \(error)")
+            Self.log.error("leaderboard_unavailable error=\(error.localizedDescription, privacy: .public)")
             leaderboard = []
         }
 
@@ -215,6 +263,10 @@ private enum ReviewPromptState {
 
     static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+    }
+
+    static var appOpenCount: Int {
+        UserDefaults.standard.integer(forKey: appOpenCountKey)
     }
 
     static func recordAppOpen() {

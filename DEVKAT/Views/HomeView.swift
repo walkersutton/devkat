@@ -1,6 +1,9 @@
 import SwiftUI
+import OSLog
 
 struct HomeView: View {
+    private static let log = Logger(subsystem: "app.devkat.ios", category: "HomeView")
+
     var onCopyTap: () -> Void = {}
     var onSessionTap: (Session) -> Void = { _ in }
 
@@ -69,6 +72,7 @@ struct HomeView: View {
                 version: app.availableCLIUpdate ?? "",
                 copied: $copiedUpdateCommand,
                 onDismiss: {
+                    Self.log.info("cli_update_prompt_dismiss_tapped version=\(app.availableCLIUpdate ?? "unknown", privacy: .public)")
                     app.dismissCLIUpdate()
                     showUpdatePrompt = false
                 }
@@ -78,14 +82,30 @@ struct HomeView: View {
             .presentationBackground(Color(hex: 0x1A1A1A))
         }
         .onAppear {
-            if app.availableCLIUpdate != nil {
+            if let version = app.availableCLIUpdate {
+                Self.log.info("cli_update_prompt_presented_on_appear version=\(version, privacy: .public)")
                 showUpdatePrompt = true
             }
         }
         .onChange(of: app.availableCLIUpdate) { _, newValue in
-            if newValue != nil {
+            if let newValue {
+                Self.log.info("cli_update_prompt_presented_on_change version=\(newValue, privacy: .public)")
                 showUpdatePrompt = true
+            } else if showUpdatePrompt {
+                Self.log.info("cli_update_prompt_auto_closed reason=version_resolved")
+                showUpdatePrompt = false
             }
+        }
+        .task(id: showUpdatePrompt) {
+            guard showUpdatePrompt else { return }
+            Self.log.info("cli_update_poll_started")
+            while showUpdatePrompt {
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                guard showUpdatePrompt else { break }
+                Self.log.info("cli_update_poll_refreshing")
+                await app.fetchSessions()
+            }
+            Self.log.info("cli_update_poll_stopped")
         }
     }
 
@@ -482,6 +502,8 @@ private struct SetupInfoSheet: View {
 // MARK: - CLI Update Sheet
 
 private struct CLIUpdateSheet: View {
+    private static let log = Logger(subsystem: "app.devkat.ios", category: "CLIUpdateSheet")
+
     let version: String
     @Binding var copied: Bool
     let onDismiss: () -> Void
@@ -508,6 +530,7 @@ private struct CLIUpdateSheet: View {
             Button {
                 UIPasteboard.general.string = command
                 copied = true
+                Self.log.info("cli_update_command_copied version=\(self.version, privacy: .public)")
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {

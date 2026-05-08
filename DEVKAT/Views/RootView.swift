@@ -1,8 +1,12 @@
 import SwiftUI
 import StoreKit
+import OSLog
 
 struct RootView: View {
+    private static let log = Logger(subsystem: "app.devkat.ios", category: "RootView")
+
     @Environment(AppModel.self) private var app
+    @Environment(\.requestReview) private var requestReview
     @State private var selected: Tab = .home
     @State private var showNegativeFeedback = false
     @State private var feedbackMessage = ""
@@ -58,15 +62,18 @@ struct RootView: View {
         ) {
             ReviewPromptSheet(
                 onNo: {
+                    Self.log.info("review_prompt_no_button_tapped")
                     app.recordNegativeReviewIntent()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                        Self.log.info("review_feedback_sheet_presented")
                         showNegativeFeedback = true
                     }
                 },
                 onYes: {
+                    Self.log.info("review_prompt_yes_button_tapped")
                     Task {
                         await app.recordPositiveReviewIntent()
-                        try? await Task.sleep(nanoseconds: 250_000_000)
+                        try? await Task.sleep(nanoseconds: 700_000_000)
                         await MainActor.run {
                             requestAppReview()
                         }
@@ -81,11 +88,13 @@ struct RootView: View {
             NegativeReviewFeedbackSheet(
                 message: $feedbackMessage,
                 onCancel: {
+                    Self.log.info("review_feedback_cancelled chars=\(self.feedbackMessage.count)")
                     feedbackMessage = ""
                     showNegativeFeedback = false
                 },
                 onSubmit: {
                     let message = feedbackMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+                    Self.log.info("review_feedback_send_tapped chars=\(message.count)")
                     feedbackMessage = ""
                     showNegativeFeedback = false
                     Task {
@@ -140,12 +149,8 @@ struct RootView: View {
     }
 
     private func requestAppReview() {
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive }) else {
-            return
-        }
-        SKStoreReviewController.requestReview(in: scene)
+        Self.log.info("storekit_native_request_review_started")
+        requestReview()
     }
 }
 
