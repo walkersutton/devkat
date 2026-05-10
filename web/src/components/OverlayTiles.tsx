@@ -54,6 +54,7 @@ export function OverlayTiles({
       <TripleStatTile session={session} onCopied={onCopied} onSaved={onSaved} />
       <ClaudeMessageTile session={session} onCopied={onCopied} onSaved={onSaved} />
       <CodexMessageTile session={session} onCopied={onCopied} onSaved={onSaved} />
+      <AcidTile session={session} onCopied={onCopied} onSaved={onSaved} />
     </div>
   );
 }
@@ -234,6 +235,43 @@ function CodexMessageTile({ session, onCopied, onSaved }: { session: Session; on
       <span className="text-[9px] font-bold text-white/80 whitespace-nowrap font-mono pb-[3px]">
         Codex Monkey {time}
       </span>
+    </div>
+  );
+}
+
+// ── Tile 6: AcidOverlay (all stats, square, custom font) ──
+function AcidTile({ session, onCopied, onSaved }: { session: Session; onCopied: () => void; onSaved: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const date = new Date(session.started_at).toLocaleDateString("en-US", {
+    month: "short", day: "numeric", year: "numeric",
+  }).toUpperCase();
+
+  const lines: string[] = [
+    date,
+    formatDuration(session.active_duration),
+    `${session.lines_added + session.lines_removed} LINES`,
+    `${linesPerHour(session)} LINES/HR`,
+    `${session.files_touched} FILES`,
+  ];
+  if (session.tokens > 0) lines.push(`${formatTokens(session.tokens)} TOKENS`);
+
+  return (
+    <div
+      ref={ref}
+      onClick={async () => { if (await copyTile(ref.current)) onCopied(); }}
+      onContextMenu={(e) => { e.preventDefault(); saveTile(ref.current); onSaved(); }}
+      className="aspect-square bg-surface rounded-[14px] border border-white/[0.12] cursor-pointer hover:border-white/[0.2] transition-colors select-none flex flex-col justify-center p-[20px]"
+    >
+      {lines.map((line, i) => (
+        <span
+          key={i}
+          style={{ fontFamily: '"Acid TM", sans-serif', fontSize: "22px" }}
+          className="text-white leading-tight whitespace-nowrap"
+        >
+          {line}
+        </span>
+      ))}
     </div>
   );
 }
