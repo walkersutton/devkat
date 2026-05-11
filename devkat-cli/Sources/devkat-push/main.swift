@@ -192,6 +192,7 @@ func runLogin() {
 
 func runLogout() {
     clearCredentials()
+    clearAccountCreatedAt()
     print("devkat-push: logged out")
 }
 

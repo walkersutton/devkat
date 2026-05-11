@@ -57,13 +57,20 @@ func clearCredentials() {
     try? FileManager.default.removeItem(at: configURL)
 }
 
-// MARK: - Install timestamp
-// Sessions started before this time are never pushed.
-// Written once on --install and never changed.
+// MARK: - Sync cutoff
+// Sessions whose entire timespan predates this point are never pushed.
+// The cutoff is the user's auth.users.created_at — fetched once after the
+// first authenticated sync and cached locally. This matches the server-side
+// cleanup that drops sessions where `ended_at <= u.created_at`.
 
 private var installTimestampURL: URL {
     let home = FileManager.default.homeDirectoryForCurrentUser
     return home.appendingPathComponent(".devkat/installed_at.txt")
+}
+
+private var accountCreatedAtURL: URL {
+    let home = FileManager.default.homeDirectoryForCurrentUser
+    return home.appendingPathComponent(".devkat/account_created_at.txt")
 }
 
 func loadInstallTimestamp() -> Date {
@@ -81,6 +88,77 @@ func writeInstallTimestamp() {
     // Only write once — never overwrite
     guard !FileManager.default.fileExists(atPath: installTimestampURL.path) else { return }
     try? ts.write(to: installTimestampURL, atomically: true, encoding: .utf8)
+}
+
+/// Returns the user's account creation timestamp, fetching from Supabase on
+/// first call and caching to ~/.devkat/account_created_at.txt thereafter.
+/// Falls back to the install timestamp if the fetch fails (so we never drop
+/// every session due to a transient network error).
+func loadAccountCreatedAt() -> Date {
+    if let str = try? String(contentsOf: accountCreatedAtURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines),
+       let ts = TimeInterval(str) {
+        return Date(timeIntervalSince1970: ts)
+    }
+    if let fetched = try? fetchAccountCreatedAt() {
+        let ts = String(fetched.timeIntervalSince1970)
+        let dir = accountCreatedAtURL.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? ts.write(to: accountCreatedAtURL, atomically: true, encoding: .utf8)
+        return fetched
+    }
+    return loadInstallTimestamp()
+}
+
+func clearAccountCreatedAt() {
+    try? FileManager.default.removeItem(at: accountCreatedAtURL)
+}
+
+private struct SupabaseUser: Decodable {
+    let createdAt: String
+    enum CodingKeys: String, CodingKey { case createdAt = "created_at" }
+}
+
+private func fetchAccountCreatedAt() throws -> Date {
+    let token = try validAccessToken()
+    let url = URL(string: "\(supabaseURL)/auth/v1/user")!
+    var req = URLRequest(url: url)
+    req.httpMethod = "GET"
+    req.setValue(supabaseAnonKey, forHTTPHeaderField: "apikey")
+    req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+    let sem = DispatchSemaphore(value: 0)
+    var result: Result<Date, Error> = .failure(AuthError(message: "No response"))
+
+    let config = URLSessionConfiguration.default
+    config.timeoutIntervalForRequest = 30
+    let urlSession = URLSession(configuration: config)
+
+    urlSession.dataTask(with: req) { data, response, error in
+        defer { sem.signal() }
+        if let error { result = .failure(error); return }
+        guard let data,
+              let user = try? JSONDecoder().decode(SupabaseUser.self, from: data) else {
+            result = .failure(AuthError(message: "Could not decode user"))
+            return
+        }
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = f.date(from: user.createdAt) {
+            result = .success(date)
+        } else {
+            f.formatOptions = [.withInternetDateTime]
+            if let date = f.date(from: user.createdAt) {
+                result = .success(date)
+            } else {
+                result = .failure(AuthError(message: "Could not parse created_at"))
+            }
+        }
+    }.resume()
+
+    if sem.wait(timeout: .now() + 30) == .timedOut {
+        throw AuthError(message: "Request timed out")
+    }
+    return try result.get()
 }
 
 
