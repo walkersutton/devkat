@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { capture } from "../lib/posthog";
+import { PasswordResetView } from "./PasswordResetView";
 
 export function AuthView() {
   const [email, setEmail] = useState("");
@@ -8,6 +9,16 @@ export function AuthView() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+
+  if (showPasswordReset) {
+    return (
+      <PasswordResetView
+        initialEmail={email}
+        onCancel={() => setShowPasswordReset(false)}
+      />
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -101,6 +112,16 @@ export function AuthView() {
           >
             {mode === "signin" ? "No account? Create one" : "Already have an account? Sign in"}
           </button>
+
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={() => { setError(null); setShowPasswordReset(true); }}
+              className="w-full text-center text-[11px] font-mono text-text-dim"
+            >
+              Forgot password?
+            </button>
+          )}
         </form>
       </div>
     </div>

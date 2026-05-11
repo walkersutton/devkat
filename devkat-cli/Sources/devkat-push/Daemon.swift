@@ -26,7 +26,10 @@ func syncAll(verbose: Bool = false) {
 
     upsertInstallation() // heartbeat — keeps last_seen_at fresh for the iOS UI
 
-    let cutoff = loadInstallTimestamp()
+    // Cutoff = the user's account creation date. Sessions that ended at or
+    // before this point are pure history and never get pushed; live sessions
+    // that straddle the boundary still go through.
+    let cutoff = loadAccountCreatedAt()
     var state = SyncState.load()
     var pushed = 0
     var failed = 0
@@ -48,6 +51,7 @@ func syncAll(verbose: Bool = false) {
             let sessions = try parseSessions(at: url)
             for session in sessions {
                 guard session.tokens > 0, session.activeDuration >= 60 else { continue }
+                guard session.endedAt > cutoff else { continue }
                 if state.contains(session.id) && isCold(session) { continue }
 
                 try writeSession(session)
@@ -73,6 +77,7 @@ func syncAll(verbose: Bool = false) {
 
         for session in sessions {
             guard session.tokens > 0, session.activeDuration >= 60 else { continue }
+            guard session.endedAt > cutoff else { continue }
             if state.contains(session.id) && isCold(session) { continue }
 
             do {
@@ -114,6 +119,7 @@ func syncAll(verbose: Bool = false) {
 
         for session in sessions {
             guard session.linesAdded + session.linesRemoved > 0, session.activeDuration >= 60 else { continue }
+            guard session.endedAt > cutoff else { continue }
             if state.contains(session.id) && isCold(session) { continue }
 
             do {
