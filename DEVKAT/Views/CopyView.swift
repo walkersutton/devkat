@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import Photos
+import UniformTypeIdentifiers
 import PostHog
 
 struct CopyView: View {
@@ -211,23 +212,28 @@ struct CopyView: View {
 }
 
 // MARK: – Render helper: UIHostingController → UIGraphicsImageRenderer
-// Renders at the tile's natural on-screen size so spacing/fonts match exactly,
-// then outputs at 6× scale for a large shareable image.
+// Renders at a large native point size (scale 1) so fonts are laid out
+// crisply at their actual pixel grid, then copies PNG bytes to pasteboard
+// to avoid JPEG compression that destroys text clarity.
 
 @MainActor
 private func renderView<V: View>(_ view: V, size: CGSize) -> UIImage? {
+    // Layout at logical point size so fonts stay proportional, then scale up
+    // to hit ~1080px output. scale=6 on a 180pt base = 1080px exactly.
+    let exportScale: CGFloat = (1080 / size.width).rounded()
+
     let hosting = UIHostingController(rootView:
         view.frame(width: size.width, height: size.height)
             .environment(\.colorScheme, .dark)
     )
-    hosting.view.frame         = CGRect(origin: .zero, size: size)
+    hosting.view.frame           = CGRect(origin: .zero, size: size)
     hosting.view.backgroundColor = .clear
     hosting.view.setNeedsLayout()
     hosting.view.layoutIfNeeded()
 
-    let format = UIGraphicsImageRendererFormat()
-    format.opaque = false
-    format.scale  = 6   // 6× of natural tile size → large crisp output
+    let format        = UIGraphicsImageRendererFormat()
+    format.opaque     = false
+    format.scale      = exportScale
     return UIGraphicsImageRenderer(size: size, format: format).image { _ in
         hosting.view.drawHierarchy(in: hosting.view.bounds, afterScreenUpdates: true)
     }
@@ -279,7 +285,7 @@ private struct OverlayTile: View {
 
     private func copy() {
         guard let img = render() else { return }
-        UIPasteboard.general.image = img
+        UIPasteboard.general.setData(img.pngData()!, forPasteboardType: UTType.png.identifier)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onCopy?()
     }
@@ -293,7 +299,7 @@ private struct OverlayTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(preset.view(for: slot, export: true), size: CGSize(width: 175, height: 110))
+        renderView(preset.view(for: slot, export: true), size: CGSize(width: 180, height: 180))
     }
 }
 
@@ -322,7 +328,7 @@ private struct DoubleTile: View {
 
     private func copy() {
         guard let img = render() else { return }
-        UIPasteboard.general.image = img
+        UIPasteboard.general.setData(img.pngData()!, forPasteboardType: UTType.png.identifier)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onCopy?()
     }
@@ -336,7 +342,7 @@ private struct DoubleTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(AuraDoubleOverlay(left: left, right: right, export: true), size: CGSize(width: 175, height: 110))
+        renderView(AuraDoubleOverlay(left: left, right: right, export: true), size: CGSize(width: 180, height: 180))
     }
 }
 
@@ -364,7 +370,7 @@ private struct TripleTile: View {
 
     private func copy() {
         guard let img = render() else { return }
-        UIPasteboard.general.image = img
+        UIPasteboard.general.setData(img.pngData()!, forPasteboardType: UTType.png.identifier)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onCopy?()
     }
@@ -378,7 +384,7 @@ private struct TripleTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(AuraTripleOverlay(slots: slots, export: true), size: CGSize(width: 175, height: 110))
+        renderView(AuraTripleOverlay(slots: slots, export: true), size: CGSize(width: 180, height: 180))
     }
 }
 
@@ -404,7 +410,7 @@ private struct MessageTile: View {
 
     private func copy() {
         guard let img = render() else { return }
-        UIPasteboard.general.image = img
+        UIPasteboard.general.setData(img.pngData()!, forPasteboardType: UTType.png.identifier)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onCopy?()
     }
@@ -418,7 +424,7 @@ private struct MessageTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(AuraMessageOverlay(session: session, export: true), size: CGSize(width: 175, height: 88))
+        renderView(AuraMessageOverlay(session: session, export: true), size: CGSize(width: 180, height: 180))
     }
 }
 
@@ -444,7 +450,7 @@ private struct CodexMessageTile: View {
 
     private func copy() {
         guard let img = render() else { return }
-        UIPasteboard.general.image = img
+        UIPasteboard.general.setData(img.pngData()!, forPasteboardType: UTType.png.identifier)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onCopy?()
     }
@@ -458,7 +464,7 @@ private struct CodexMessageTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(CodexMessageOverlay(session: session, export: true), size: CGSize(width: 175, height: 88))
+        renderView(CodexMessageOverlay(session: session, export: true), size: CGSize(width: 180, height: 180))
     }
 }
 
@@ -484,7 +490,7 @@ private struct AcidTile: View {
 
     private func copy() {
         guard let img = render() else { return }
-        UIPasteboard.general.image = img
+        UIPasteboard.general.setData(img.pngData()!, forPasteboardType: UTType.png.identifier)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         onCopy?()
     }
@@ -498,7 +504,7 @@ private struct AcidTile: View {
 
     @MainActor
     private func render() -> UIImage? {
-        renderView(AcidOverlay(session: session, export: true), size: CGSize(width: 175, height: 175))
+        renderView(AcidOverlay(session: session, export: true), size: CGSize(width: 180, height: 180))
     }
 }
 
@@ -656,7 +662,7 @@ private struct WeeklyTripleTile: View {
 
     private func copy() {
         guard let img = render() else { return }
-        UIPasteboard.general.image = img
+        UIPasteboard.general.setData(img.pngData()!, forPasteboardType: UTType.png.identifier)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         // PostHog: Capture weekly totals copied
         PostHogSDK.shared.capture("weekly_totals_copied")
@@ -682,6 +688,6 @@ private struct WeeklyTripleTile: View {
     @MainActor
     private func render() -> UIImage? {
         renderView(AuraTripleOverlay(slots: slots, showLabels: false, headerLabel: "This Week", export: true),
-                   size: CGSize(width: 175, height: 110))
+                   size: CGSize(width: 180, height: 180))
     }
 }
