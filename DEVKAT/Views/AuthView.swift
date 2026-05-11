@@ -9,8 +9,21 @@ struct AuthView: View {
     @State private var isSignUp = false
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showPasswordReset = false
 
     var body: some View {
+        if showPasswordReset {
+            PasswordResetView(
+                initialEmail: email,
+                onCancel: { showPasswordReset = false },
+                onAuthenticated: onAuthenticated
+            )
+        } else {
+            signInBody
+        }
+    }
+
+    private var signInBody: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
@@ -74,6 +87,17 @@ struct AuthView: View {
                         Text(isSignUp ? "Already have an account? Sign in" : "No account? Create one")
                             .font(.system(.caption, design: .monospaced))
                             .foregroundStyle(Theme.textDim)
+                    }
+
+                    if !isSignUp {
+                        Button {
+                            errorMessage = nil
+                            showPasswordReset = true
+                        } label: {
+                            Text("Forgot password?")
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(Theme.textDim)
+                        }
                     }
                 }
                 .padding(.horizontal, 32)

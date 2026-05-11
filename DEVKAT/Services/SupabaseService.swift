@@ -68,6 +68,41 @@ actor SupabaseService {
         )
     }
 
+    // MARK: Password reset (OTP flow)
+
+    /// Send a 6-digit password recovery code to the email address.
+    func sendPasswordResetCode(email: String) async throws {
+        var req = URLRequest(url: base.appendingPathComponent("auth/v1/recover"))
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(anon, forHTTPHeaderField: "apikey")
+        req.httpBody = try JSONEncoder().encode(["email": email])
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkStatus(response, data: data)
+    }
+
+    /// Verify the 6-digit recovery code and return a recovery session.
+    func verifyPasswordResetCode(email: String, code: String) async throws -> AuthTokens {
+        try await authRequest(
+            url: base.appendingPathComponent("auth/v1/verify"),
+            body: ["email": email, "token": code, "type": "recovery"]
+        )
+    }
+
+    /// Update the password using a recovery (or any logged-in) access token.
+    func updatePassword(_ newPassword: String, accessToken: String) async throws {
+        var req = URLRequest(url: base.appendingPathComponent("auth/v1/user"))
+        req.httpMethod = "PUT"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(anon, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        req.httpBody = try JSONEncoder().encode(["password": newPassword])
+
+        let (data, response) = try await URLSession.shared.data(for: req)
+        try checkStatus(response, data: data)
+    }
+
     private func authRequest(url: URL, body: [String: String]) async throws -> AuthTokens {
         var req = URLRequest(url: url)
         req.httpMethod = "POST"

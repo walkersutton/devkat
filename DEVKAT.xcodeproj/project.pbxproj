@@ -79,6 +79,7 @@
 		F3D38BACEB3D9EC9C66115B6 /* SF-Pro-Display-Heavy.otf in Resources */ = {isa = PBXBuildFile; fileRef = 6F939337B0EDE382EC55BB6D /* SF-Pro-Display-Heavy.otf */; };
 		F3DAC488F82F94F9F1952DA7 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2AE7B3925F8C529A8CD8FB /* Keychain.swift */; };
 		FA2FF90739159BBC95C0BF34 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA5FF9E99BC9AA4BEC9325F8 /* AuthView.swift */; };
+		D1E2F3A4B5C60718293A4001 /* PasswordResetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1E2F3A4B5C60718293A4002 /* PasswordResetView.swift */; };
 		FDF0AE8958099E22AC84F2CA /* SF-Pro-Rounded-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = 6467EEF20912738EB19BF965 /* SF-Pro-Rounded-Regular.otf */; };
 		POSTHOG0BLDFILE00000001C /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = POSTHOG0PKGDEP000000001B /* PostHog */; };
 /* End PBXBuildFile section */
@@ -163,6 +164,7 @@
 		E0ED79CB7C26FE67D6966422 /* NewYorkSmall-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "NewYorkSmall-Medium.otf"; sourceTree = "<group>"; };
 		E6EB2FDF604BCFB6A2C96AD8 /* NewYorkLarge-Medium.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "NewYorkLarge-Medium.otf"; sourceTree = "<group>"; };
 		EA5FF9E99BC9AA4BEC9325F8 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		D1E2F3A4B5C60718293A4002 /* PasswordResetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordResetView.swift; sourceTree = "<group>"; };
 		EAF812C25650E099453EF458 /* SF-Pro-Display-Semibold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SF-Pro-Display-Semibold.otf"; sourceTree = "<group>"; };
 		EB3C77094A8CE30DADFC60FE /* NewYorkSmall-Semibold.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "NewYorkSmall-Semibold.otf"; sourceTree = "<group>"; };
 		EE32E5934CB73990F753A5C3 /* SF-Compact-Rounded-Regular.otf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SF-Compact-Rounded-Regular.otf"; sourceTree = "<group>"; };
@@ -246,6 +248,7 @@
 			isa = PBXGroup;
 			children = (
 				EA5FF9E99BC9AA4BEC9325F8 /* AuthView.swift */,
+				D1E2F3A4B5C60718293A4002 /* PasswordResetView.swift */,
 				CEA78A71BC7F5E06A47A39D9 /* CopyView.swift */,
 				9BECB8E96F5FC3F424C10DDE /* HomeView.swift */,
 				B419D746BD547C7B031AC711 /* LaunchScreenView.swift */,
@@ -442,6 +445,7 @@
 				0FFF998303AA0DAB4F4C82E8 /* AuraOverlay.swift in Sources */,
 				0FFF998303AA0DAB00AC1D01 /* AcidOverlay.swift in Sources */,
 				FA2FF90739159BBC95C0BF34 /* AuthView.swift in Sources */,
+				D1E2F3A4B5C60718293A4001 /* PasswordResetView.swift in Sources */,
 				D8B37B80D1BD0368DE3C0007 /* Config.swift in Sources */,
 				A0D7710A19B2483D12B6DBF7 /* CopyView.swift in Sources */,
 				8BFF51C5A1CC45E21AEFB9F7 /* DEVKATApp.swift in Sources */,
