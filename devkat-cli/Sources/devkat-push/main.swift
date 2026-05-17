@@ -12,6 +12,7 @@ let args = CommandLine.arguments
 let home = FileManager.default.homeDirectoryForCurrentUser
 let claudeDir = home.appendingPathComponent(".claude")
 let codexDir  = home.appendingPathComponent(".codex")
+let piDir    = home.appendingPathComponent(".pi")
 
 func run() {
     if args.contains("--login")     { return runLogin() }
@@ -23,10 +24,21 @@ func run() {
     if args.contains("--sync-all")  { return syncAll(verbose: !args.contains("--quiet")) }
     if args.contains("--cursor-test") { return runCursorTest() }
 
-    // --session <path>  forces a specific Claude JSONL file
+    // --session <path>  forces a specific session file (auto-detects source)
     if let idx = args.firstIndex(of: "--session"), args.count > idx + 1 {
         let url = URL(fileURLWithPath: args[idx + 1])
-        pushClaudeSession(at: url)
+        if url.path.contains(".pi/") {
+            do {
+                let session = try parsePiSession(url)
+                try writeSession(session)
+                printSummary(session)
+            } catch {
+                print("devkat-push: error – \(error.localizedDescription)")
+                exit(1)
+            }
+        } else {
+            pushClaudeSession(at: url)
+        }
         return
     }
 
@@ -42,6 +54,8 @@ func run() {
         pushLatestClaudeSession()
     case "cursor":
         pushLatestCursorSession()
+    case "pi":
+        pushLatestPiSession()
     default:
         pushNewestSessionAcrossAllSources()
     }
@@ -51,7 +65,7 @@ func run() {
 
 func pushNewestSessionAcrossAllSources() {
     guard let newest = newestParsedSessionAcrossAllSources() else {
-        print("devkat-push: no sessions found in ~/.claude, ~/.codex, or Cursor")
+        print("devkat-push: no sessions found in ~/.claude, ~/.codex, Cursor, or ~/.pi")
         exit(1)
     }
 
@@ -84,6 +98,12 @@ private func newestParsedSessionAcrossAllSources() -> (label: String, session: P
     if let row = findLatestCursorSession() {
         let date = Date(timeIntervalSince1970: Double(row.updatedAtMs) / 1000.0)
         candidates.append(Candidate(date: date, parse: { parseCursorSession(row) }, label: "cursor"))
+    }
+
+    // Pi
+    if let url = findLatestPiSessionFile() {
+        let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast
+        candidates.append(Candidate(date: date, parse: { try parsePiSession(url) }, label: "pi"))
     }
 
     for candidate in candidates.sorted(by: { $0.date > $1.date }) {
@@ -135,6 +155,22 @@ func pushLatestCursorSession() {
     }
     let session = parseCursorSession(row)
     pushParsedSession(session)
+}
+
+func pushLatestPiSession() {
+    guard let url = findLatestPiSessionFile() else {
+        print("devkat-push: no Pi sessions found in ~/.pi/agent/sessions/")
+        exit(1)
+    }
+    print("devkat-push: parsing \(url.lastPathComponent) …")
+    do {
+        let session = try parsePiSession(url)
+        try writeSession(session)
+        printSummary(session)
+    } catch {
+        print("devkat-push: error – \(error.localizedDescription)")
+        exit(1)
+    }
 }
 
 func pushParsedSession(_ session: ParsedSession) {
@@ -212,7 +248,12 @@ func listSessions() {
                 label: "cursor",
                 name: "\($0.composerId.prefix(8))… \($0.repoPath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "?")  \($0.name)") }
 
-    let all = (claudeFiles + codexRows + cursorRows).sorted { $0.date > $1.date }
+    let piFiles = findAllPiSessions()
+        .map { (date: (try? $0.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? .distantPast,
+               label: "pi",
+               name: $0.lastPathComponent) }
+
+    let all = (claudeFiles + codexRows + cursorRows + piFiles).sorted { $0.date > $1.date }
 
     if all.isEmpty { print("No session files found."); return }
     print("\(all.count) sessions (newest first):")

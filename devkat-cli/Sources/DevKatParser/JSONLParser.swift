@@ -6,6 +6,7 @@ public enum SessionSource: String, Codable {
     case claude
     case codex
     case cursor
+    case pi
 }
 
 public struct ParsedSession: Codable {
@@ -55,6 +56,11 @@ private struct JSONLRecord: Decodable {
 private struct JSONLMessage: Decodable {
     let role: String?
     let model: String?
+    let id: String?
+    let type: String?
+    let stopReason: String?
+    let stopSequence: String?
+    let stopDetails: String?
     let usage: JSONLUsage?
     let content: JSONLContent?
 }
@@ -75,7 +81,20 @@ private enum JSONLContent: Decodable {
 
 private struct JSONLContentBlock: Decodable {
     let type: String
+    let text: String?
+    let thinking: String?
+    let signature: String?
+    let id: String?
     let name: String?
+    let input: String?
+    let source: String?
+    let cacheControl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case type, text, thinking, signature, id, name, input
+        case source
+        case cacheControl = "cache_control"
+    }
 }
 
 private struct JSONLUsage: Decodable {
@@ -93,12 +112,36 @@ private struct JSONLUsage: Decodable {
 }
 
 private struct JSONLToolUseResult: Decodable {
+    // File edit fields
     let filePath: String?
+    let oldString: String?
+    let newString: String?
+    let originalFile: String?
     let structuredPatch: [JSONLPatchHunk]?
-    let type: String?
+    let userModified: Bool?
+    let replaceAll: Bool?
+
+    // Search/content fields
+    let content: String?
+    let filenames: [String]?
+    let mode: String?
+    let numFiles: Int?
+    let numLines: Int?
+
+    // Command output fields
+    let stdout: String?
+    let stderr: String?
+    let interrupted: Bool?
+    let isImage: Bool?
+    let noOutputExpected: Bool?
+    let durationMs: Int?
 }
 
 private struct JSONLPatchHunk: Decodable {
+    let oldStart: Int?
+    let oldLines: Int?
+    let newStart: Int?
+    let newLines: Int?
     let lines: [String]
 }
 
