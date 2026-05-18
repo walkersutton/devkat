@@ -116,8 +116,8 @@ export function PasswordResetView({ initialEmail, onCancel }: Props) {
       : "SAVE PASSWORD";
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-8">
-      <div className="w-full max-w-sm space-y-10">
+    <div className="min-h-screen flex items-center justify-center px-8 md:px-12">
+      <div className="w-full max-w-sm md:max-w-4xl md:grid md:grid-cols-[minmax(0,1fr)_380px] md:items-center md:gap-16 space-y-10 md:space-y-0">
         <div className="flex justify-start">
           <button
             type="button"
@@ -128,7 +128,7 @@ export function PasswordResetView({ initialEmail, onCancel }: Props) {
           </button>
         </div>
 
-        <div className="space-y-3 text-left">
+        <div className="space-y-3 text-left md:max-w-xl">
           <p
             className="text-[26px] text-text italic"
             style={{ fontFamily: "'Times New Roman', Times, serif" }}
@@ -140,7 +140,7 @@ export function PasswordResetView({ initialEmail, onCancel }: Props) {
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-3">
+        <form onSubmit={onSubmit} className="space-y-3 md:rounded-2xl md:border md:border-border md:bg-surface/50 md:p-5">
           {step === "email" && (
             <input
               type="email"

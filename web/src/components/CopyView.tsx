@@ -17,7 +17,7 @@ export function CopyView({ session, sessions }: { session: Session | null; sessi
   }
 
   return (
-    <div className="max-w-lg mx-auto relative">
+    <div className="max-w-lg md:max-w-6xl mx-auto relative md:px-8">
       {/* When no session: just empty state, no header/tabs */}
       {!session ? (
         <div className="flex flex-col items-center justify-center min-h-[70vh] gap-[16px]">
@@ -29,32 +29,34 @@ export function CopyView({ session, sessions }: { session: Session | null; sessi
           </p>
         </div>
       ) : (
-        <>
-          {/* Header */}
-          <div className="text-center py-[14px] space-y-[6px]">
-            <div className="flex items-center justify-center gap-[6px] text-text">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-              </svg>
-              <span className="text-[11px] font-bold font-mono tracking-[0.15em]">TAP TO COPY</span>
+        <div className="md:grid md:grid-cols-[280px_minmax(0,512px)] md:justify-center md:gap-8 md:pt-8">
+          <div className="md:sticky md:top-8 md:self-start md:rounded-2xl md:border md:border-border md:bg-surface/50 md:p-5">
+            {/* Header */}
+            <div className="text-center py-[14px] space-y-[6px] md:pt-0">
+              <div className="flex items-center justify-center gap-[6px] text-text">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                </svg>
+                <span className="text-[11px] font-bold font-mono tracking-[0.15em]">TAP TO COPY</span>
+              </div>
+              <div className="flex items-center justify-center gap-[6px] text-text-dim">
+                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+                <span className="text-[10px] font-bold font-mono tracking-[0.15em]">PRESS + HOLD TO SAVE</span>
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-[6px] text-text-dim">
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              <span className="text-[10px] font-bold font-mono tracking-[0.15em]">PRESS + HOLD TO SAVE</span>
-            </div>
-          </div>
 
-          {/* Tab bar */}
-          <div className="flex px-[16px] pb-[4px]">
-            <TabButton label="Activity" active={tab === "activity"} onClick={() => setTab("activity")} />
-            <TabButton label="Totals" active={tab === "totals"} onClick={() => setTab("totals")} />
+            {/* Tab bar */}
+            <div className="flex px-[16px] pb-[4px] md:px-0 md:pb-0 md:pt-3">
+              <TabButton label="Activity" active={tab === "activity"} onClick={() => setTab("activity")} />
+              <TabButton label="Totals" active={tab === "totals"} onClick={() => setTab("totals")} />
+            </div>
           </div>
 
           {/* Content */}
           {tab === "activity" ? (
-            <div className="px-[16px] pt-[12px] pb-[100px]">
+            <div className="px-[16px] pt-[12px] pb-[100px] md:w-[512px] md:max-w-lg md:px-0 md:pb-10 md:pt-0">
               <OverlayTiles
                 session={session}
                 selectedStatId={selectedStatId}
@@ -64,11 +66,11 @@ export function CopyView({ session, sessions }: { session: Session | null; sessi
               />
             </div>
           ) : (
-            <div className="px-[16px] pt-[12px] pb-[100px]">
+            <div className="px-[16px] pt-[12px] pb-[100px] md:w-[512px] md:max-w-lg md:px-0 md:pb-10 md:pt-0">
               <WeeklyTotals sessions={sessions} onCopied={() => showToast("Copied!")} />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Toast */}
@@ -120,13 +122,13 @@ function StatPickerSheet({
   const stats = getStatSlots(session);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50" />
       <div
-        className="relative w-full max-w-lg bg-surface-raised rounded-t-2xl px-5 pt-4 pb-8"
+        className="relative w-full max-w-lg bg-surface-raised rounded-t-2xl px-5 pt-4 pb-8 md:rounded-2xl md:pb-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-9 h-1 bg-white/30 rounded-full mx-auto mb-4" />
+        <div className="w-9 h-1 bg-white/30 rounded-full mx-auto mb-4 md:hidden" />
         <div className="grid grid-cols-3 gap-3">
           {stats.map((stat) => (
             <button

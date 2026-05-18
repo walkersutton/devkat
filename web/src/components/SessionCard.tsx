@@ -21,9 +21,8 @@ export function SessionCard({
   return (
     <button
       onClick={onClick}
-      className="w-full text-left p-[20px] rounded-2xl relative overflow-hidden"
+      className="w-full text-left p-[20px] rounded-2xl relative overflow-hidden aspect-[1.35] md:aspect-[1.15] xl:aspect-[1.25] transition-colors hover:bg-white/[0.08]"
       style={{
-        aspectRatio: "1.35",
         background: "rgba(255,255,255,0.06)",
       }}
     >

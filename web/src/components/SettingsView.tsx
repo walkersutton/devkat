@@ -40,8 +40,8 @@ export function SettingsView({ email, onClose }: { email: string; onClose: () =>
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="px-[16px] pt-[16px]">
+    <div className="max-w-lg md:max-w-2xl mx-auto md:px-8">
+      <div className="px-[16px] pt-[16px] md:px-0 md:pt-8 md:pb-10">
         <div className="flex flex-col gap-[28px]">
           {/* Header */}
           <div className="relative flex items-center justify-center pt-[8px] pb-[4px]">
@@ -240,8 +240,8 @@ interface LegalSectionData {
 
 function LegalView({ title, sections, onClose }: { title: string; sections: LegalSectionData[]; onClose: () => void }) {
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="px-[20px] pt-[16px] pb-[60px]">
+    <div className="max-w-lg md:max-w-3xl mx-auto md:px-8">
+      <div className="px-[20px] pt-[16px] pb-[60px] md:px-0 md:pt-8 md:pb-10">
         <div className="flex flex-col gap-[24px]">
           {/* Header */}
           <div className="relative flex items-center justify-center pt-[8px] pb-[8px]">
