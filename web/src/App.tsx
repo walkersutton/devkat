@@ -109,8 +109,6 @@ export default function App() {
           <div className="flex flex-col gap-2">
             <SidebarButton active={activeTab === "home"} icon="home" label="Home" onClick={() => { setActiveTab("home"); setShowSettings(false); }} />
             <SidebarButton active={activeTab === "copy"} icon="copy" label="Copy" onClick={() => { setActiveTab("copy"); setShowSettings(false); }} />
-          </div>
-          <div className="mt-auto">
             <SidebarButton active={false} icon="settings" label="Settings" onClick={() => setShowSettings(true)} />
           </div>
         </aside>
