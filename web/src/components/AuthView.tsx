@@ -50,10 +50,10 @@ export function AuthView() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-8">
-      <div className="w-full max-w-sm space-y-10">
+    <div className="min-h-screen flex items-center justify-center px-8 md:px-12">
+      <div className="w-full max-w-sm md:max-w-5xl md:grid md:grid-cols-[minmax(0,1fr)_380px] md:items-center md:gap-20 space-y-10 md:space-y-0">
         {/* Logo */}
-        <div className="text-center space-y-2.5">
+        <div className="text-center md:text-left space-y-2.5">
           <h1 className="text-[34px] font-normal text-text font-led">
             DEVKAT
           </h1>
@@ -63,7 +63,7 @@ export function AuthView() {
         </div>
 
         {/* Manifesto */}
-        <div className="space-y-3 text-left">
+        <div className="space-y-3 text-left md:max-w-xl">
           <p className="text-2xl text-text italic" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
             Developers ship things worth sharing.
           </p>
@@ -73,7 +73,7 @@ export function AuthView() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <form onSubmit={handleSubmit} className="space-y-3 md:rounded-2xl md:border md:border-border md:bg-surface/50 md:p-5">
           <input
             type="email"
             placeholder="Email"
