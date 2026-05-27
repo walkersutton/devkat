@@ -17,6 +17,7 @@ export interface Installation {
   hostname: string;
   installed_at: string;
   last_seen_at: string;
+  cli_version: string | null;
 }
 
 export interface LeaderboardEntry {

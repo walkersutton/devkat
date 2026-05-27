@@ -6,9 +6,36 @@ import { HomeView } from "./components/HomeView";
 import { CopyView } from "./components/CopyView";
 import { SettingsView } from "./components/SettingsView";
 import type { Session as UserSession } from "@supabase/supabase-js";
-import type { Session, LeaderboardEntry } from "./lib/types";
+import type { Session, LeaderboardEntry, Installation } from "./lib/types";
 
 type Tab = "home" | "copy";
+
+const CLI_INSTALL_COMMAND = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat/main/scripts/install.sh | sh";
+
+function normalizeVersion(version: string) {
+  return version.trim().replace(/^v/i, "");
+}
+
+function compareVersions(a: string, b: string) {
+  const left = normalizeVersion(a).split(/[.-]/).map((part) => Number.parseInt(part, 10) || 0);
+  const right = normalizeVersion(b).split(/[.-]/).map((part) => Number.parseInt(part, 10) || 0);
+  const length = Math.max(left.length, right.length);
+
+  for (let i = 0; i < length; i += 1) {
+    const diff = (left[i] ?? 0) - (right[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+
+  return 0;
+}
+
+function newestInstalledVersion(installations: Installation[]) {
+  return installations
+    .map((installation) => installation.cli_version)
+    .filter((version): version is string => Boolean(version))
+    .sort(compareVersions)
+    .at(-1) ?? null;
+}
 
 export default function App() {
   const [session, setSession] = useState<UserSession | null>(null);
@@ -21,6 +48,8 @@ export default function App() {
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [availableCLIUpdate, setAvailableCLIUpdate] = useState<string | null>(null);
+  const [dismissedCLIUpdate, setDismissedCLIUpdate] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
     setSessionsLoading(true);
@@ -40,6 +69,39 @@ export default function App() {
     ]);
     if (!allTimeResult.error && allTimeResult.data) setLeaderboard(allTimeResult.data as LeaderboardEntry[]);
     if (!weeklyResult.error && weeklyResult.data) setWeeklyLeaderboard(weeklyResult.data as LeaderboardEntry[]);
+  }, []);
+
+  const fetchInstallationsAndCheckCLI = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("installations")
+      .select("hostname,installed_at,last_seen_at,cli_version")
+      .order("last_seen_at", { ascending: false });
+    if (error || !data || data.length === 0) {
+      setAvailableCLIUpdate(null);
+      return;
+    }
+
+    try {
+      const response = await fetch("https://api.github.com/repos/runnon/devkat/releases/latest", {
+        headers: { Accept: "application/vnd.github+json" },
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+
+      const release = await response.json() as { tag_name?: string };
+      const latestTag = release.tag_name;
+      if (!latestTag) return;
+
+      const latestVersion = normalizeVersion(latestTag);
+      const installedVersion = newestInstalledVersion(data as Installation[]);
+      const updateNeeded = installedVersion
+        ? compareVersions(installedVersion, latestVersion) < 0
+        : true;
+
+      setAvailableCLIUpdate(updateNeeded ? latestTag : null);
+    } catch {
+      // CLI update checks are non-critical; avoid disrupting the dashboard.
+    }
   }, []);
 
   useEffect(() => {
@@ -70,13 +132,16 @@ export default function App() {
       if (session) {
         void fetchSessions();
         void fetchLeaderboard();
+        void fetchInstallationsAndCheckCLI();
       } else {
         setSessions([]);
         setLeaderboard([]);
         setWeeklyLeaderboard([]);
+        setAvailableCLIUpdate(null);
+        setDismissedCLIUpdate(null);
       }
     });
-  }, [session, fetchSessions, fetchLeaderboard]);
+  }, [session, fetchSessions, fetchLeaderboard, fetchInstallationsAndCheckCLI]);
 
   if (loading) {
     return (
@@ -145,6 +210,13 @@ export default function App() {
         )}
       </div>
 
+      {availableCLIUpdate && availableCLIUpdate !== dismissedCLIUpdate && (
+        <CLIUpdatePrompt
+          version={availableCLIUpdate}
+          onDismiss={() => setDismissedCLIUpdate(availableCLIUpdate)}
+        />
+      )}
+
       {/* Bottom tab bar — matches iOS: 2 icon tabs */}
       {!showSettings && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 desk:hidden">
@@ -167,6 +239,58 @@ export default function App() {
           </div>
         </nav>
       )}
+    </div>
+  );
+}
+
+function CLIUpdatePrompt({
+  version,
+  onDismiss,
+}: {
+  version: string;
+  onDismiss: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function copyCommand() {
+    await navigator.clipboard.writeText(CLI_INSTALL_COMMAND);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
+
+  return (
+    <div className="fixed inset-x-3 bottom-[82px] z-50 mx-auto max-w-lg desk:left-auto desk:right-6 desk:bottom-6 desk:mx-0 desk:w-[420px]">
+      <div className="border border-logo-green/40 bg-surface-raised/95 px-4 py-4 shadow-2xl shadow-black/50 backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-mono text-[11px] font-bold tracking-[0.16em] text-logo-green">
+              CLI UPDATE AVAILABLE
+            </div>
+            <p className="mt-2 font-mono text-[12px] leading-relaxed text-text-dim">
+              Version {version} is ready. Run the installer on your Mac to update `devkat-push`.
+            </p>
+          </div>
+          <button
+            onClick={onDismiss}
+            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center text-text-muted transition-colors hover:text-text"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+        <button
+          onClick={copyCommand}
+          className="mt-3 w-full cursor-pointer bg-white/[0.06] px-3 py-2 text-left transition-colors hover:bg-white/[0.09]"
+        >
+          <code className="block break-all font-mono text-[11px] leading-relaxed text-text">
+            {CLI_INSTALL_COMMAND}
+          </code>
+          <span className="mt-2 block font-mono text-[10px] font-bold tracking-[0.14em] text-logo-green">
+            {copied ? "COPIED" : "COPY COMMAND"}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }
