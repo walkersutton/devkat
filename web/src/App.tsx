@@ -10,7 +10,7 @@ import type { Session, LeaderboardEntry, Installation } from "./lib/types";
 
 type Tab = "home" | "copy";
 
-const CLI_INSTALL_COMMAND = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat/main/scripts/install.sh | sh";
+const CLI_UPDATE_COMMAND = "devkat-push update";
 
 function normalizeVersion(version: string) {
   return version.trim().replace(/^v/i, "");
@@ -253,7 +253,7 @@ function CLIUpdatePrompt({
   const [copied, setCopied] = useState(false);
 
   async function copyCommand() {
-    await navigator.clipboard.writeText(CLI_INSTALL_COMMAND);
+    await navigator.clipboard.writeText(CLI_UPDATE_COMMAND);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   }
@@ -267,7 +267,7 @@ function CLIUpdatePrompt({
               CLI UPDATE AVAILABLE
             </div>
             <p className="mt-2 font-mono text-[12px] leading-relaxed text-text-dim">
-              Version {version} is ready. Run the installer on your Mac to update `devkat-push`.
+              Version {version} is ready. Run the updater on your Mac to update `devkat-push`.
             </p>
           </div>
           <button
@@ -284,7 +284,7 @@ function CLIUpdatePrompt({
           className="mt-3 w-full cursor-pointer bg-white/[0.06] px-3 py-2 text-left transition-colors hover:bg-white/[0.09]"
         >
           <code className="block break-all font-mono text-[11px] leading-relaxed text-text">
-            {CLI_INSTALL_COMMAND}
+            {CLI_UPDATE_COMMAND}
           </code>
           <span className="mt-2 block font-mono text-[10px] font-bold tracking-[0.14em] text-logo-green">
             {copied ? "COPIED" : "COPY COMMAND"}

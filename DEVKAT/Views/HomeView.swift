@@ -509,7 +509,7 @@ private struct CLIUpdateSheet: View {
     @Binding var copied: Bool
     let onDismiss: () -> Void
 
-    private let command = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat/main/scripts/install.sh | sh"
+    private let command = "devkat-push update"
 
     var body: some View {
         VStack(spacing: 16) {

@@ -22,6 +22,7 @@ func run() {
     if args.contains("--uninstall") { return uninstallDaemon() }
     if args.contains("--status")    { return daemonStatus() }
     if args.contains("--sync-all")  { return syncAll(verbose: !args.contains("--quiet")) }
+    if args.dropFirst().first == "update" { return runUpdate(force: args.contains("--force")) }
     if args.contains("--cursor-test") { return runCursorTest() }
 
     // --session <path>  forces a specific session file (auto-detects source)
