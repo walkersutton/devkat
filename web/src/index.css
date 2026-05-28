@@ -497,3 +497,23 @@ body::-webkit-scrollbar {
 .btn-submit:not(:disabled):active {
   transform: scale(0.97);
 }
+
+.combat-leaderboard-cols {
+  grid-template-columns: 42px minmax(0, 1fr) 86px;
+}
+
+.combat-leaderboard-cols-expanded {
+  grid-template-columns: 42px minmax(0, 1fr) 86px;
+}
+
+@media (min-width: 640px) {
+  .combat-leaderboard-cols-expanded {
+    grid-template-columns: 48px minmax(0, 1fr) 100px 82px;
+  }
+}
+
+@media (min-width: 768px) {
+  .combat-leaderboard-cols-expanded {
+    grid-template-columns: 56px minmax(0, 1fr) 120px 96px 112px;
+  }
+}

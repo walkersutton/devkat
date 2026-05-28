@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ReactNode } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import type { LeaderboardEntry, SourceLeaderboardEntry } from "../lib/types";
 import {
   leaderboardDisplayName,
@@ -40,6 +41,8 @@ function formatDuration(seconds: number) {
 }
 
 function formatNumber(n: number) {
+  if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(1)}T`;
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return `${n}`;
@@ -152,6 +155,17 @@ function SourceWinners({ entries }: { entries: SourceLeaderboardEntry[] }) {
   );
 }
 
+const URL_TO_PERIOD: Record<string, LeaderboardPeriod> = {
+  day: "day",
+  weekly: "weekly",
+  "all-time": "allTime",
+};
+const PERIOD_TO_URL: Record<LeaderboardPeriod, string> = {
+  day: "day",
+  weekly: "weekly",
+  allTime: "all-time",
+};
+
 export function LeaderboardView({
   dailyLeaderboard,
   weeklyLeaderboard,
@@ -163,7 +177,12 @@ export function LeaderboardView({
   allTimeLeaderboard: LeaderboardEntry[];
   sourceLeaderboard: Record<string, SourceLeaderboardEntry[]>;
 }) {
-  const [period, setPeriod] = useState<LeaderboardPeriod>("weekly");
+  const { period: periodParam } = useParams<{ period: string }>();
+  const navigate = useNavigate();
+  const period: LeaderboardPeriod = (periodParam && URL_TO_PERIOD[periodParam]) ?? "weekly";
+  function setPeriod(p: LeaderboardPeriod) {
+    navigate(`/leaderboard/${PERIOD_TO_URL[p]}`, { replace: true });
+  }
   const activeEntries =
     period === "day"
       ? dailyLeaderboard

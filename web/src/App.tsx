@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { identify, reset } from "./lib/posthog";
 import { AuthView } from "./components/AuthView";
@@ -11,6 +12,13 @@ import type { Session as UserSession } from "@supabase/supabase-js";
 import type { Session, SessionComponent, LeaderboardEntry, SourceLeaderboardEntry, Installation } from "./lib/types";
 
 type Tab = "home" | "leaderboard" | "stats" | "copy";
+
+function pathToTab(pathname: string): Tab {
+  if (pathname.startsWith("/leaderboard")) return "leaderboard";
+  if (pathname === "/stats") return "stats";
+  if (pathname === "/copy") return "copy";
+  return "home";
+}
 
 const CLI_INSTALL_COMMAND = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat/main/scripts/install.sh | sh";
 
@@ -40,9 +48,11 @@ function newestInstalledVersion(installations: Installation[]) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [session, setSession] = useState<UserSession | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("home");
+  const activeTab: Tab = pathToTab(location.pathname);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -207,10 +217,10 @@ export default function App() {
             </button>
           </div>
           <div className="flex flex-col gap-2">
-            <SidebarButton active={activeTab === "home"} icon="home" label="Home" onClick={() => { setActiveTab("home"); setShowSettings(false); }} />
-            <SidebarButton active={activeTab === "leaderboard"} icon="leaderboard" label="Leaderboard" onClick={() => { setActiveTab("leaderboard"); setShowSettings(false); }} />
-            <SidebarButton active={activeTab === "stats"} icon="stats" label="Your Stats" onClick={() => { setActiveTab("stats"); setShowSettings(false); }} />
-            <SidebarButton active={activeTab === "copy"} icon="copy" label="Copy" onClick={() => { setActiveTab("copy"); setShowSettings(false); }} />
+            <SidebarButton active={activeTab === "home"} icon="home" label="Home" onClick={() => { navigate("/"); setShowSettings(false); }} />
+            <SidebarButton active={activeTab === "leaderboard"} icon="leaderboard" label="Leaderboard" onClick={() => { navigate("/leaderboard"); setShowSettings(false); }} />
+            <SidebarButton active={activeTab === "stats"} icon="stats" label="Your Stats" onClick={() => { navigate("/stats"); setShowSettings(false); }} />
+            <SidebarButton active={activeTab === "copy"} icon="copy" label="Copy" onClick={() => { navigate("/copy"); setShowSettings(false); }} />
             <SidebarButton active={false} icon="settings" label="Settings" onClick={() => setShowSettings(true)} />
           </div>
         </aside>
@@ -218,43 +228,44 @@ export default function App() {
 
       {/* Content area */}
       <div className="flex-1 min-w-0 overflow-auto pb-[70px] desk:pb-0">
-        {activeTab === "home" && !showSettings && (
-          <HomeView
-            sessions={sessions}
-            leaderboard={leaderboard}
-            weeklyLeaderboard={weeklyLeaderboard}
-            loading={sessionsLoading}
-            showInfo={showInfo}
-            onInfoTap={() => setShowInfo(true)}
-            onInfoClose={() => setShowInfo(false)}
-            onRefresh={fetchSessions}
-            onSessionTap={(s) => {
-              setSelectedSession(s);
-              setActiveTab("copy");
-            }}
-            onCopyTap={() => setActiveTab("copy")}
-            onSettingsTap={() => setShowSettings(true)}
-          />
-        )}
-        {activeTab === "leaderboard" && !showSettings && (
-          <LeaderboardView
-            dailyLeaderboard={dailyLeaderboard}
-            weeklyLeaderboard={weeklyLeaderboard}
-            allTimeLeaderboard={leaderboard}
-            sourceLeaderboard={sourceLeaderboard}
-          />
-        )}
-        {activeTab === "stats" && !showSettings && (
-          <PersonalStatsView sessions={sessions} components={sessionComponents} />
-        )}
-        {activeTab === "copy" && !showSettings && (
-          <CopyView session={selectedSession} sessions={sessions} />
-        )}
-        {showSettings && (
+        {showSettings ? (
           <SettingsView
             email={session.user.email ?? ""}
             onClose={() => setShowSettings(false)}
           />
+        ) : (
+          <Routes>
+            <Route path="/" element={
+              <HomeView
+                sessions={sessions}
+                leaderboard={leaderboard}
+                weeklyLeaderboard={weeklyLeaderboard}
+                loading={sessionsLoading}
+                showInfo={showInfo}
+                onInfoTap={() => setShowInfo(true)}
+                onInfoClose={() => setShowInfo(false)}
+                onRefresh={fetchSessions}
+                onSessionTap={(s) => {
+                  setSelectedSession(s);
+                  navigate("/copy");
+                }}
+                onCopyTap={() => navigate("/copy")}
+                onSettingsTap={() => setShowSettings(true)}
+              />
+            } />
+            <Route path="/leaderboard" element={<Navigate to="/leaderboard/weekly" replace />} />
+            <Route path="/leaderboard/:period" element={
+              <LeaderboardView
+                dailyLeaderboard={dailyLeaderboard}
+                weeklyLeaderboard={weeklyLeaderboard}
+                allTimeLeaderboard={leaderboard}
+                sourceLeaderboard={sourceLeaderboard}
+              />
+            } />
+            <Route path="/stats" element={<PersonalStatsView sessions={sessions} components={sessionComponents} />} />
+            <Route path="/copy" element={<CopyView session={selectedSession} sessions={sessions} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         )}
       </div>
 
@@ -275,22 +286,22 @@ export default function App() {
               <TabIcon
                 active={activeTab === "home"}
                 icon={activeTab === "home" ? "house-fill" : "house"}
-                onClick={() => { setActiveTab("home"); setShowSettings(false); }}
+                onClick={() => { navigate("/"); setShowSettings(false); }}
               />
               <TabIcon
                 active={activeTab === "leaderboard"}
                 icon={activeTab === "leaderboard" ? "leaderboard-fill" : "leaderboard"}
-                onClick={() => { setActiveTab("leaderboard"); setShowSettings(false); }}
+                onClick={() => { navigate("/leaderboard"); setShowSettings(false); }}
               />
               <TabIcon
                 active={activeTab === "stats"}
                 icon={activeTab === "stats" ? "stats-fill" : "stats"}
-                onClick={() => { setActiveTab("stats"); setShowSettings(false); }}
+                onClick={() => { navigate("/stats"); setShowSettings(false); }}
               />
               <TabIcon
                 active={activeTab === "copy"}
                 icon={activeTab === "copy" ? "copy-fill" : "copy"}
-                onClick={() => { setActiveTab("copy"); setShowSettings(false); }}
+                onClick={() => { navigate("/copy"); setShowSettings(false); }}
               />
               </div>
             </div>
