@@ -13,6 +13,20 @@ export interface Session {
   git_branch: string | null;
 }
 
+export interface SessionComponent {
+  session_id: string;
+  source: string;
+  source_session_id: string;
+  started_at: string;
+  ended_at: string;
+  active_duration: number;
+  lines_added: number;
+  lines_removed: number;
+  files_touched: number;
+  tokens: number;
+  model: string;
+}
+
 export interface Installation {
   hostname: string;
   installed_at: string;
@@ -23,6 +37,17 @@ export interface Installation {
 export interface LeaderboardEntry {
   email: string;
   total_tokens: number;
+  total_lines?: number;
+  total_sessions?: number;
+  active_seconds?: number;
+}
+
+export interface SourceLeaderboardEntry {
+  source: string;
+  email: string;
+  total_tokens: number;
+  total_sessions: number;
+  active_seconds: number;
 }
 
 export function leaderboardDisplayName(email: string): string {
