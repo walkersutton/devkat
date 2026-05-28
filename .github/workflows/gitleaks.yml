@@ -3,6 +3,7 @@ name: Secret scan
 on:
   pull_request:
   push:
+    # Keep `dev` enabled so branch pushes can trigger a manual CI smoke test.
     branches: [main, dev]
   workflow_dispatch:
 
