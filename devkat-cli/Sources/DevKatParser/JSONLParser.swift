@@ -6,6 +6,7 @@ public enum SessionSource: String, Codable {
     case claude
     case codex
     case cursor
+    case pi
 }
 
 public struct ParsedSession: Codable {

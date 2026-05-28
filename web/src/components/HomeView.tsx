@@ -6,7 +6,11 @@ import { SessionCard } from "./SessionCard";
 export function HomeView({
   sessions,
   leaderboard,
+  weeklyLeaderboard,
   loading,
+  showInfo,
+  onInfoTap,
+  onInfoClose,
   onRefresh,
   onSessionTap,
   onCopyTap,
@@ -14,37 +18,40 @@ export function HomeView({
 }: {
   sessions: Session[];
   leaderboard: LeaderboardEntry[];
+  weeklyLeaderboard: LeaderboardEntry[];
   loading: boolean;
+  showInfo: boolean;
+  onInfoTap: () => void;
+  onInfoClose: () => void;
   onRefresh: () => void;
   onSessionTap: (s: Session) => void;
   onCopyTap: () => void;
   onSettingsTap: () => void;
 }) {
   const [copiedCommand, setCopiedCommand] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
 
   const grouped = groupByDay(sessions);
 
   return (
-    <div className="max-w-lg mx-auto h-full flex flex-col">
+    <div className="max-w-lg desk:max-w-6xl mx-auto h-full flex flex-col">
       {/* Title bar — pinned to top */}
-      <div className="sticky top-0 z-10 bg-background">
+      <div className="sticky top-0 z-10 bg-background desk:hidden">
         <div className="flex items-center px-[16px] py-[14px]">
-          <button onClick={onSettingsTap} className="w-[32px] h-[32px] flex items-center justify-center">
+          <button onClick={onSettingsTap} className="w-[32px] h-[32px] flex items-center justify-center desk:hidden">
             <svg className="w-[18px] h-[18px]" fill="white" viewBox="0 0 24 24">
               <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
             </svg>
           </button>
-          <button onClick={() => setShowInfo(true)} className="w-[32px] h-[32px] flex items-center justify-center">
+          <button onClick={onInfoTap} className="w-[32px] h-[32px] flex items-center justify-center desk:hidden">
             <svg className="w-[18px] h-[18px]" fill="none" stroke="white" strokeWidth={1.5} viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10" />
               <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
             </svg>
           </button>
-          <div className="flex-1 text-center">
+          <div className="flex-1 text-center desk:hidden">
             <span className="text-2xl font-normal tracking-[0.1em] text-white font-led">DEVKAT</span>
           </div>
-          <button onClick={onCopyTap} className="w-[32px] h-[32px] flex items-center justify-center">
+          <button onClick={onCopyTap} className="w-[32px] h-[32px] flex items-center justify-center desk:hidden">
             <svg className="w-[18px] h-[18px]" fill="none" stroke="white" strokeWidth={1.3} viewBox="0 0 22 22">
               <rect x="6" y="6" width="14" height="14" rx="3"/>
               <path d="M4 14.5V4a2.5 2.5 0 012.5-2.5H13"/>
@@ -56,12 +63,15 @@ export function HomeView({
       </div>
 
       {/* Info sheet overlay */}
-      {showInfo && <SetupInfoSheet onClose={() => setShowInfo(false)} />}
+      {showInfo && <SetupInfoSheet onClose={onInfoClose} />}
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
         {leaderboard.length > 0 && (
           <LeaderboardStrip entries={leaderboard} />
+        )}
+        {weeklyLeaderboard.length > 0 && (
+          <WeeklyLeaderboardStrip entries={weeklyLeaderboard} />
         )}
         {loading && sessions.length === 0 ? (
           <div className="flex items-center justify-center py-20">
@@ -76,12 +86,12 @@ export function HomeView({
               setTimeout(() => setCopiedCommand(false), 2000);
             }}
             onRefresh={onRefresh}
-            onInfoTap={() => setShowInfo(true)}
+            onInfoTap={onInfoTap}
             loading={loading}
           />
         ) : (
-          <div className="px-[16px] pt-[18px] pb-[100px]">
-            <div className="flex flex-col gap-[24px]">
+          <div className="px-[16px] pt-[18px] pb-[100px] desk:px-8 desk:pb-10">
+            <div className="flex flex-col gap-[24px] desk:gap-[32px]">
               {grouped.map(({ label, items }) => (
                 <section key={label} className="flex flex-col gap-[12px]">
                   <div className="flex items-center gap-[8px]">
@@ -90,7 +100,7 @@ export function HomeView({
                     </span>
                     <div className="flex-1 h-px bg-border" />
                   </div>
-                  <div className="flex flex-col gap-[12px]">
+                  <div className="flex flex-col gap-[12px] desk:grid desk:grid-cols-2 xl:grid-cols-3">
                     {items.map((s) => (
                       <SessionCard key={s.id} session={s} onClick={() => onSessionTap(s)} />
                     ))}
@@ -216,10 +226,10 @@ function SetupInfoSheet({ onClose }: { onClose: () => void }) {
   }, [dragY, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center desk:items-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60" />
       <div
-        className="relative w-full max-w-lg bg-[#1A1A1A] rounded-t-2xl p-5 pb-10"
+        className="relative w-full max-w-lg bg-[#1A1A1A] rounded-t-2xl p-5 pb-10 desk:max-w-[480px] desk:rounded-2xl desk:pb-5"
         style={{
           transform: `translateY(${dragY}px)`,
           transition: dragging ? "none" : "transform 0.25s ease-out",
@@ -227,7 +237,7 @@ function SetupInfoSheet({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="w-full pt-1 pb-4 cursor-grab active:cursor-grabbing touch-none"
+          className="w-full pt-1 pb-4 cursor-grab active:cursor-grabbing touch-none desk:hidden"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -253,22 +263,21 @@ function SetupInfoSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-const LEADERBOARD_ICONS = ["🦁", "🐆", "🐈"];
+const LEADERBOARD_ICONS: Record<number, string> = { 0: "🦁", 1: "🐆", 2: "🐈" };
 
 function LeaderboardStrip({ entries }: { entries: LeaderboardEntry[] }) {
   return (
     <div className="py-[14px]">
-      <div className="px-[16px] flex items-center gap-[8px] mb-[10px]">
-        <span className="text-[10px] font-bold font-mono text-text-muted tracking-[0.15em]">
-          TOP TOKEN BURNERS
+      <div className="px-[16px] flex items-center gap-[8px] mb-[10px] desk:px-8">
+        <span className="text-[10px] font-bold font-mono text-text-muted tracking-[0.15em] whitespace-nowrap">
+          ALL TIME TOKEN BURNERS
         </span>
         <div className="flex-1 h-px bg-border" />
       </div>
-      <div className="px-[16px] flex justify-between">
-        {entries.slice(0, 3).map((entry, i) => {
-          const align = i === 0 ? "items-start" : i === 1 ? "items-center" : "items-end";
-          return (
-            <div key={entry.email} className={`flex flex-col ${align} gap-[4px]`}>
+      <div className="overflow-x-auto overflow-y-hidden" style={{ scrollbarWidth: "none" }}>
+        <div className="flex items-start gap-[24px] px-[16px] desk:px-8" style={{ width: "max-content" }}>
+          {entries.slice(0, 5).map((entry, i) => (
+            <div key={entry.email} className="flex flex-col gap-[4px]">
               <div className="flex items-center gap-[6px]">
                 <span
                   className="text-[11px] font-bold font-mono"
@@ -279,15 +288,65 @@ function LeaderboardStrip({ entries }: { entries: LeaderboardEntry[] }) {
                 <span className="text-[11px] font-semibold font-mono text-text whitespace-nowrap">
                   {leaderboardDisplayName(entry.email)}
                 </span>
-                <span className="text-[12px]">{LEADERBOARD_ICONS[i]}</span>
+                {LEADERBOARD_ICONS[i] && (
+                  <span className="text-[12px]">{LEADERBOARD_ICONS[i]}</span>
+                )}
               </div>
               <span className="text-[10px] font-mono text-text-muted">
                 {leaderboardFormattedTokens(entry.total_tokens)}
               </span>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function WeeklyLeaderboardStrip({ entries }: { entries: LeaderboardEntry[] }) {
+  const left = entries.slice(0, 5);
+  const right = entries.slice(5, 10);
+  return (
+    <div className="py-[14px]">
+      <div className="px-[16px] flex items-center gap-[8px] mb-[10px] desk:px-8">
+        <span className="text-[10px] font-bold font-mono text-text-muted tracking-[0.15em] whitespace-nowrap">
+          WEEKLY TOKEN BURNERS
+        </span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+      <div className="px-[16px] flex gap-[24px] desk:px-8">
+        <div className="flex flex-col gap-[8px]">
+          {left.map((entry, i) => (
+            <WeeklyRow key={entry.email} entry={entry} rank={i + 1} />
+          ))}
+        </div>
+        {right.length > 0 && (
+          <div className="flex flex-col gap-[8px]">
+            {right.map((entry, i) => (
+              <WeeklyRow key={entry.email} entry={entry} rank={i + 6} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WeeklyRow({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
+  return (
+    <div className="flex items-baseline gap-[6px]">
+      <span
+        className="text-[10px] font-bold font-mono w-[14px] shrink-0"
+        style={{ color: rank === 1 ? "var(--color-logo-green)" : "var(--color-text-dim)" }}
+      >
+        {rank}
+      </span>
+      <span className="text-[10px] font-semibold font-mono text-text whitespace-nowrap">
+        {leaderboardDisplayName(entry.email)}
+      </span>
+      <span className="text-[9px] font-mono text-text-muted shrink-0">
+        {leaderboardFormattedTokens(entry.total_tokens)}
+      </span>
     </div>
   );
 }
