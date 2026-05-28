@@ -33,78 +33,78 @@ struct PasswordResetView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                header
-                    .padding(.top, 16)
+            ScrollView {
+                VStack(spacing: 0) {
+                    header
+                        .padding(.top, 16)
 
-                Spacer()
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(title)
-                        .font(.custom("TimesNewRomanPS-ItalicMT", size: 26))
-                        .foregroundStyle(Theme.text)
-                    Text(subtitle)
-                        .font(.system(.footnote, design: .monospaced))
-                        .foregroundStyle(Theme.textDim)
-                        .lineSpacing(3)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 32)
-                .padding(.bottom, 24)
-
-                VStack(spacing: 12) {
-                    formFields
-
-                    if let info {
-                        Text(info)
-                            .font(.system(.caption, design: .monospaced))
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(title)
+                            .font(.custom("TimesNewRomanPS-ItalicMT", size: 26))
+                            .foregroundStyle(Theme.text)
+                        Text(subtitle)
+                            .font(.system(.footnote, design: .monospaced))
                             .foregroundStyle(Theme.textDim)
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 4)
+                            .lineSpacing(3)
                     }
-                    if let err = errorMessage {
-                        Text(err)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.red.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 4)
-                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 48)
+                    .padding(.bottom, 24)
 
-                    Button(action: submit) {
-                        ZStack {
-                            if isLoading {
-                                ProgressView().tint(.black)
-                            } else {
-                                Text(buttonLabel)
-                                    .font(.system(.footnote, design: .monospaced).weight(.bold))
-                                    .tracking(2)
-                                    .foregroundStyle(.black)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 48)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    .disabled(isLoading || !canSubmit)
-                    .padding(.top, 8)
+                    VStack(spacing: 12) {
+                        formFields
 
-                    if step == .enterCode {
-                        Button {
-                            sendCode(initial: false)
-                        } label: {
-                            Text("Resend code")
+                        if let info {
+                            Text(info)
                                 .font(.system(.caption, design: .monospaced))
                                 .foregroundStyle(Theme.textDim)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+                        if let err = errorMessage {
+                            Text(err)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.red.opacity(0.8))
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                        }
+
+                        Button(action: submit) {
+                            ZStack {
+                                if isLoading {
+                                    ProgressView().tint(.black)
+                                } else {
+                                    Text(buttonLabel)
+                                        .font(.system(.footnote, design: .monospaced).weight(.bold))
+                                        .tracking(2)
+                                        .foregroundStyle(.black)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 48)
+                            .background(.white.opacity(canSubmit ? 1.0 : 0.5))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         }
                         .disabled(isLoading)
-                    }
-                }
-                .padding(.horizontal, 32)
+                        .padding(.top, 8)
 
-                Spacer()
-                Spacer()
+                        if step == .enterCode {
+                            Button {
+                                sendCode(initial: false)
+                            } label: {
+                                Text("Resend code")
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(Theme.textDim)
+                            }
+                            .disabled(isLoading)
+                        }
+                    }
+                    .padding(.horizontal, 32)
+                    .padding(.bottom, 48)
+                }
             }
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 
@@ -136,7 +136,7 @@ struct PasswordResetView: View {
         case .enterCode:
             return "We sent a 6-digit code to \(email). Enter it below to continue."
         case .enterNewPassword:
-            return "Pick a new password (at least 8 characters). You'll be signed in once it's saved."
+            return "Pick a new password (at least 6 characters). You'll be signed in once it's saved."
         }
     }
 
@@ -152,7 +152,7 @@ struct PasswordResetView: View {
         switch step {
         case .enterEmail:       return !email.isEmpty
         case .enterCode:        return code.count == 6
-        case .enterNewPassword: return newPassword.count >= 8 && newPassword == confirmPassword
+        case .enterNewPassword: return newPassword.count >= 6 && newPassword == confirmPassword
         }
     }
 
@@ -174,8 +174,8 @@ struct PasswordResetView: View {
                     }
                 }
         case .enterNewPassword:
-            field(placeholder: "New password", text: $newPassword, secure: true)
-            field(placeholder: "Confirm password", text: $confirmPassword, secure: true)
+            field(placeholder: "New password", text: $newPassword, secure: true, contentType: .newPassword)
+            field(placeholder: "Confirm password", text: $confirmPassword, secure: true, contentType: nil)
         }
     }
 
@@ -208,9 +208,21 @@ struct PasswordResetView: View {
         errorMessage = nil
         info = nil
         switch step {
-        case .enterEmail:       sendCode(initial: true)
-        case .enterCode:        verifyCode()
-        case .enterNewPassword: savePassword()
+        case .enterEmail:
+            let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else {
+                errorMessage = "Enter your email to continue."
+                return
+            }
+            sendCode(initial: true)
+        case .enterCode:
+            guard code.count == 6 else {
+                errorMessage = "Enter the 6-digit code from your email."
+                return
+            }
+            verifyCode()
+        case .enterNewPassword:
+            savePassword()
         }
     }
 
@@ -265,8 +277,8 @@ struct PasswordResetView: View {
             step = .enterEmail
             return
         }
-        guard newPassword.count >= 8 else {
-            errorMessage = "Password must be at least 8 characters."
+        guard newPassword.count >= 6 else {
+            errorMessage = "Password must be at least 6 characters."
             return
         }
         guard newPassword == confirmPassword else {

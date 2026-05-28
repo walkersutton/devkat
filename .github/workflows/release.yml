@@ -22,12 +22,12 @@ jobs:
 
       - name: Build release binary
         working-directory: devkat-cli
-        run: swift build -c release
+        run: swift build -c release --arch arm64 --arch x86_64
 
       - name: Package binary
         run: |
-          cd devkat-cli/.build/arm64-apple-macosx/release
-          tar -czf /tmp/devkat-push-macos.tar.gz devkat-push
+          cd devkat-cli/.build/apple/Products/Release
+          tar -czf /tmp/devkat-push-macos-universal.tar.gz devkat-push
 
       - name: Create release
         env:
@@ -35,6 +35,6 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           NOTES=$(git log -1 --pretty=%B)
-          gh release create "$TAG" /tmp/devkat-push-macos.tar.gz \
+          gh release create "$TAG" /tmp/devkat-push-macos-universal.tar.gz \
             --title "$TAG" \
             --notes "$NOTES"

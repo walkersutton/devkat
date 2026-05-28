@@ -8,7 +8,7 @@ import { LeaderboardView } from "./components/LeaderboardView";
 import { PersonalStatsView } from "./components/PersonalStatsView";
 import { SettingsView } from "./components/SettingsView";
 import type { Session as UserSession } from "@supabase/supabase-js";
-import type { Session, SessionComponent, LeaderboardEntry, SourceLeaderboardEntry } from "./lib/types";
+import type { Session, SessionComponent, LeaderboardEntry, SourceLeaderboardEntry, Installation } from "./lib/types";
 
 type Tab = "home" | "leaderboard" | "stats" | "copy";
 
@@ -49,6 +49,7 @@ export default function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionComponents, setSessionComponents] = useState<SessionComponent[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [availableCLIUpdate, setAvailableCLIUpdate] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [dailyLeaderboard, setDailyLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -168,6 +169,7 @@ export default function App() {
       } else {
         setSessions([]);
         setSessionComponents([]);
+        setAvailableCLIUpdate(null);
         setLeaderboard([]);
         setWeeklyLeaderboard([]);
         setDailyLeaderboard([]);
@@ -255,6 +257,13 @@ export default function App() {
           />
         )}
       </div>
+
+      {availableCLIUpdate && (
+        <CLIUpdatePrompt
+          version={availableCLIUpdate}
+          onDismiss={() => setAvailableCLIUpdate(null)}
+        />
+      )}
 
       {/* Bottom tab bar */}
       {!showSettings && (
