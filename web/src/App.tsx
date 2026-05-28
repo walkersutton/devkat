@@ -4,11 +4,13 @@ import { identify, reset } from "./lib/posthog";
 import { AuthView } from "./components/AuthView";
 import { HomeView } from "./components/HomeView";
 import { CopyView } from "./components/CopyView";
+import { LeaderboardView } from "./components/LeaderboardView";
+import { PersonalStatsView } from "./components/PersonalStatsView";
 import { SettingsView } from "./components/SettingsView";
 import type { Session as UserSession } from "@supabase/supabase-js";
-import type { Session, LeaderboardEntry, Installation } from "./lib/types";
+import type { Session, SessionComponent, LeaderboardEntry, SourceLeaderboardEntry } from "./lib/types";
 
-type Tab = "home" | "copy";
+type Tab = "home" | "leaderboard" | "stats" | "copy";
 
 const CLI_INSTALL_COMMAND = "curl -fsSL https://raw.githubusercontent.com/runnon/devkat/main/scripts/install.sh | sh";
 
@@ -45,30 +47,60 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessionComponents, setSessionComponents] = useState<SessionComponent[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [availableCLIUpdate, setAvailableCLIUpdate] = useState<string | null>(null);
-  const [dismissedCLIUpdate, setDismissedCLIUpdate] = useState<string | null>(null);
+  const [dailyLeaderboard, setDailyLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [sourceLeaderboard, setSourceLeaderboard] = useState<Record<string, SourceLeaderboardEntry[]>>({
+    day: [],
+    weekly: [],
+    allTime: [],
+  });
 
   const fetchSessions = useCallback(async () => {
     setSessionsLoading(true);
-    const { data, error } = await supabase
+    const [sessionsResult, componentsResult] = await Promise.all([
+      supabase
       .from("sessions")
       .select("*")
       .order("started_at", { ascending: false })
-      .limit(200);
-    if (!error && data) setSessions(data as Session[]);
+      .limit(200),
+      supabase
+        .from("session_components")
+        .select("session_id,source,source_session_id,started_at,ended_at,active_duration,lines_added,lines_removed,files_touched,tokens,model")
+        .order("started_at", { ascending: false })
+        .limit(1000),
+    ]);
+    if (!sessionsResult.error && sessionsResult.data) setSessions(sessionsResult.data as Session[]);
+    if (!componentsResult.error && componentsResult.data) setSessionComponents(componentsResult.data as SessionComponent[]);
     setSessionsLoading(false);
   }, []);
 
   const fetchLeaderboard = useCallback(async () => {
-    const [allTimeResult, weeklyResult] = await Promise.all([
+    const [
+      allTimeResult,
+      weeklyResult,
+      dailyResult,
+      allTimeSourceResult,
+      weeklySourceResult,
+      dailySourceResult,
+    ] = await Promise.all([
       supabase.rpc("token_leaderboard"),
       supabase.rpc("weekly_token_leaderboard"),
+      supabase.rpc("last_24h_token_leaderboard"),
+      supabase.rpc("source_token_leaderboard", { p_window: "all_time" }),
+      supabase.rpc("source_token_leaderboard", { p_window: "weekly" }),
+      supabase.rpc("source_token_leaderboard", { p_window: "24h" }),
     ]);
     if (!allTimeResult.error && allTimeResult.data) setLeaderboard(allTimeResult.data as LeaderboardEntry[]);
     if (!weeklyResult.error && weeklyResult.data) setWeeklyLeaderboard(weeklyResult.data as LeaderboardEntry[]);
+    if (!dailyResult.error && dailyResult.data) setDailyLeaderboard(dailyResult.data as LeaderboardEntry[]);
+    setSourceLeaderboard({
+      allTime: !allTimeSourceResult.error && allTimeSourceResult.data ? allTimeSourceResult.data as SourceLeaderboardEntry[] : [],
+      weekly: !weeklySourceResult.error && weeklySourceResult.data ? weeklySourceResult.data as SourceLeaderboardEntry[] : [],
+      day: !dailySourceResult.error && dailySourceResult.data ? dailySourceResult.data as SourceLeaderboardEntry[] : [],
+    });
   }, []);
 
   const fetchInstallationsAndCheckCLI = useCallback(async () => {
@@ -135,10 +167,11 @@ export default function App() {
         void fetchInstallationsAndCheckCLI();
       } else {
         setSessions([]);
+        setSessionComponents([]);
         setLeaderboard([]);
         setWeeklyLeaderboard([]);
-        setAvailableCLIUpdate(null);
-        setDismissedCLIUpdate(null);
+        setDailyLeaderboard([]);
+        setSourceLeaderboard({ day: [], weekly: [], allTime: [] });
       }
     });
   }, [session, fetchSessions, fetchLeaderboard, fetchInstallationsAndCheckCLI]);
@@ -164,7 +197,7 @@ export default function App() {
               <div className="font-led text-[28px] tracking-[0.08em] text-logo-green">devkat</div>
               <div className="mt-1 text-[10px] font-mono font-bold tracking-[0.18em] text-text-muted">WEB</div>
             </div>
-            <button onClick={() => setShowInfo(true)} className="mt-1 w-[28px] h-[28px] flex items-center justify-center text-text-muted hover:text-text transition-colors">
+            <button onClick={() => setShowInfo(true)} className="mt-1 w-[28px] h-[28px] cursor-pointer flex items-center justify-center text-text-muted hover:text-text transition-colors">
               <svg className="w-[16px] h-[16px]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
@@ -173,6 +206,8 @@ export default function App() {
           </div>
           <div className="flex flex-col gap-2">
             <SidebarButton active={activeTab === "home"} icon="home" label="Home" onClick={() => { setActiveTab("home"); setShowSettings(false); }} />
+            <SidebarButton active={activeTab === "leaderboard"} icon="leaderboard" label="Leaderboard" onClick={() => { setActiveTab("leaderboard"); setShowSettings(false); }} />
+            <SidebarButton active={activeTab === "stats"} icon="stats" label="Your Stats" onClick={() => { setActiveTab("stats"); setShowSettings(false); }} />
             <SidebarButton active={activeTab === "copy"} icon="copy" label="Copy" onClick={() => { setActiveTab("copy"); setShowSettings(false); }} />
             <SidebarButton active={false} icon="settings" label="Settings" onClick={() => setShowSettings(true)} />
           </div>
@@ -199,6 +234,17 @@ export default function App() {
             onSettingsTap={() => setShowSettings(true)}
           />
         )}
+        {activeTab === "leaderboard" && !showSettings && (
+          <LeaderboardView
+            dailyLeaderboard={dailyLeaderboard}
+            weeklyLeaderboard={weeklyLeaderboard}
+            allTimeLeaderboard={leaderboard}
+            sourceLeaderboard={sourceLeaderboard}
+          />
+        )}
+        {activeTab === "stats" && !showSettings && (
+          <PersonalStatsView sessions={sessions} components={sessionComponents} />
+        )}
         {activeTab === "copy" && !showSettings && (
           <CopyView session={selectedSession} sessions={sessions} />
         )}
@@ -210,24 +256,27 @@ export default function App() {
         )}
       </div>
 
-      {availableCLIUpdate && availableCLIUpdate !== dismissedCLIUpdate && (
-        <CLIUpdatePrompt
-          version={availableCLIUpdate}
-          onDismiss={() => setDismissedCLIUpdate(availableCLIUpdate)}
-        />
-      )}
-
-      {/* Bottom tab bar — matches iOS: 2 icon tabs */}
+      {/* Bottom tab bar */}
       {!showSettings && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 desk:hidden">
           <div className="bg-black/80 backdrop-blur-xl">
             <div className="max-w-lg mx-auto">
               <div className="h-px bg-white/15" />
-              <div className="flex items-center justify-center gap-[72px] py-3">
+              <div className="flex items-center justify-center gap-[36px] py-3">
               <TabIcon
                 active={activeTab === "home"}
                 icon={activeTab === "home" ? "house-fill" : "house"}
                 onClick={() => { setActiveTab("home"); setShowSettings(false); }}
+              />
+              <TabIcon
+                active={activeTab === "leaderboard"}
+                icon={activeTab === "leaderboard" ? "leaderboard-fill" : "leaderboard"}
+                onClick={() => { setActiveTab("leaderboard"); setShowSettings(false); }}
+              />
+              <TabIcon
+                active={activeTab === "stats"}
+                icon={activeTab === "stats" ? "stats-fill" : "stats"}
+                onClick={() => { setActiveTab("stats"); setShowSettings(false); }}
               />
               <TabIcon
                 active={activeTab === "copy"}
@@ -302,14 +351,14 @@ function SidebarButton({
   onClick,
 }: {
   active: boolean;
-  icon: "home" | "copy" | "settings";
+  icon: "home" | "leaderboard" | "stats" | "copy" | "settings";
   label: string;
   onClick: () => void;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
+      className={`flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
         active ? "bg-white/[0.09] text-text" : "text-text-muted hover:bg-white/[0.05] hover:text-text-dim"
       }`}
     >
@@ -323,6 +372,18 @@ function SidebarButton({
           <rect x="6" y="6" width="14" height="14" rx="3" />
           <path d="M4 14.5V4a2.5 2.5 0 012.5-2.5H13" />
           <path d="M13 9.5v5M10.5 12h5" strokeLinecap="round" />
+        </svg>
+      )}
+      {icon === "leaderboard" && (
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 22 22">
+          <path d="M4 18.5h14" strokeLinecap="round" />
+          <path d="M5 18.5V11h3.5v7.5M9.25 18.5V5h3.5v13.5M13.5 18.5V8h3.5v10.5" />
+        </svg>
+      )}
+      {icon === "stats" && (
+        <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 22 22">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M11 4v7l5 5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
       {icon === "settings" && (
@@ -356,6 +417,31 @@ function TabIcon({ icon, onClick }: { active: boolean; icon: string; onClick: ()
           <rect x="6" y="6" width="14" height="14" rx="3"/>
           <path d="M4 14.5V4a2.5 2.5 0 012.5-2.5H13" stroke="white" strokeWidth={1.5} fill="none"/>
           <path d="M13 9.5v5M10.5 12h5" stroke="black" strokeWidth={1.5} strokeLinecap="round"/>
+        </svg>
+      )}
+      {icon === "leaderboard-fill" && (
+        <svg className="w-[22px] h-[22px]" fill="white" viewBox="0 0 22 22">
+          <path d="M4 19.2a.7.7 0 010-1.4h14a.7.7 0 110 1.4H4z" />
+          <rect x="4.75" y="10.5" width="3.8" height="7.1" rx="0.8" />
+          <rect x="9.1" y="4.25" width="3.8" height="13.35" rx="0.8" />
+          <rect x="13.45" y="7.5" width="3.8" height="10.1" rx="0.8" />
+        </svg>
+      )}
+      {icon === "leaderboard" && (
+        <svg className="w-[22px] h-[22px] opacity-45" fill="none" stroke="white" strokeWidth={1.2} viewBox="0 0 22 22">
+          <path d="M4 18.5h14" strokeLinecap="round" />
+          <path d="M5 18.5V11h3.5v7.5M9.25 18.5V5h3.5v13.5M13.5 18.5V8h3.5v10.5" />
+        </svg>
+      )}
+      {icon === "stats-fill" && (
+        <svg className="w-[22px] h-[22px]" fill="white" viewBox="0 0 22 22">
+          <path d="M11 2.5a8.5 8.5 0 108.5 8.5A8.5 8.5 0 0011 2.5zm.8 8.15l4.05 4.05a.8.8 0 11-1.13 1.13l-4.28-4.28A.8.8 0 0110.2 11V5.75a.8.8 0 011.6 0z" />
+        </svg>
+      )}
+      {icon === "stats" && (
+        <svg className="w-[22px] h-[22px] opacity-45" fill="none" stroke="white" strokeWidth={1.2} viewBox="0 0 22 22">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M11 4v7l5 5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
       {/* SF Symbol: plus.square.on.square */}

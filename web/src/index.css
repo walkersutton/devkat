@@ -16,8 +16,9 @@
 
 @font-face {
   font-family: "Acid TM";
-  src: url("/fonts/AcidTM.woff2") format("woff2"),
-       url("/fonts/AcidTM.otf") format("opentype");
+  src:
+    url("/fonts/AcidTM.woff2") format("woff2"),
+    url("/fonts/AcidTM.otf") format("opentype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -25,8 +26,9 @@
 
 @font-face {
   font-family: "Dreamer TM";
-  src: url("/fonts/DreamerTM.woff2") format("woff2"),
-       url("/fonts/DreamerTM.ttf") format("truetype");
+  src:
+    url("/fonts/DreamerTM.woff2") format("woff2"),
+    url("/fonts/DreamerTM.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -106,16 +108,17 @@
 
 @theme {
   --color-background: #000000;
-  --color-surface: #0E0E0E;
-  --color-surface-raised: #1A1A1A;
-  --color-border: #2A2A2A;
-  --color-text: #FFFFFF;
-  --color-text-dim: #9A9A9A;
-  --color-text-muted: #5A5A5A;
-  --color-logo-green: #00FF41;
-  --color-imessage-blue: #007AFF;
-  --color-android-green: #34C759;
-  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --color-surface: #0e0e0e;
+  --color-surface-raised: #1a1a1a;
+  --color-border: #2a2a2a;
+  --color-text: #ffffff;
+  --color-text-dim: #9a9a9a;
+  --color-text-muted: #5a5a5a;
+  --color-logo-green: #00ff41;
+  --color-imessage-blue: #007aff;
+  --color-android-green: #34c759;
+  --font-mono:
+    "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-serif: Baskerville, "NewYork", "Baskerville Old Face", Georgia, serif;
   --font-led: "LEDLIGHT", ui-monospace, monospace;
 }
@@ -124,7 +127,12 @@ body {
   margin: 0;
   background: var(--color-background);
   color: var(--color-text);
-  font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family:
+    "SF Pro Display",
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   overflow-y: auto;
   scrollbar-width: none;
@@ -163,10 +171,329 @@ body::-webkit-scrollbar {
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(1); opacity: 0.8; }
-  100% { transform: scale(1.4); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
 }
 
 .animate-pulse-ring {
   animation: pulse-ring 1.6s ease-out infinite;
+}
+
+@keyframes blink-soft {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+.animate-blink {
+  animation: blink-soft 2s ease-in-out infinite;
+}
+
+@keyframes led-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.92;
+  }
+}
+.animate-flicker {
+  animation: led-flicker 4s ease-in-out infinite;
+}
+
+/* Scanlines overlay — apply to relative-positioned containers */
+.scanlines {
+  position: relative;
+}
+.scanlines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.012) 0,
+    rgba(255, 255, 255, 0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  z-index: 2;
+}
+
+/* Green text glow */
+.text-glow {
+  text-shadow: 0 0 12px rgba(0, 255, 65, 0.45);
+}
+
+/* Auth modal panel: bottom sheet on mobile, centered card on desktop */
+.auth-modal-panel {
+  border-radius: 18px 18px 0 0;
+}
+@media (min-width: 768px) {
+  .auth-modal-panel {
+    border-radius: 18px;
+  }
+}
+
+/* Auth landing page responsive helpers */
+.auth-px {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+@media (min-width: 640px) {
+  .auth-px {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+.podium-grid {
+  /* One value to rule them all — #2 and #3 heights derive from this */
+  --podium-h1: 175px;
+  display: grid;
+  /* minmax(0, 1fr) prevents auto min-width from overflowing on mobile */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 18px;
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .podium-grid {
+    --podium-h1: 260px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 22px;
+  }
+}
+
+.rank-grid-cols {
+  grid-template-columns: 40px 1fr 90px;
+}
+@media (min-width: 480px) {
+  .rank-grid-cols {
+    grid-template-columns: 48px 1fr 120px;
+  }
+}
+
+/* Keep section header on one line at small sizes */
+.section-header-left {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+@media (max-width: 480px) {
+  .section-header-left {
+    font-size: 9px;
+  }
+}
+
+/* Podium card: flex column so rank number clips, handle+tokens always sit at bottom */
+.podium-card {
+  position: relative;
+  border-radius: 14px;
+  padding: 12px 12px 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Heights derived from --podium-h1 set on .podium-grid */
+.podium-card[data-place="1"] {
+  height: var(--podium-h1);
+}
+.podium-card[data-place="2"] {
+  height: calc(var(--podium-h1) * 0.85);
+}
+.podium-card[data-place="3"] {
+  height: calc(var(--podium-h1) * 0.75);
+}
+
+@media (min-width: 640px) {
+  .podium-card {
+    padding: 18px 18px 20px;
+  }
+}
+
+/* Podium rank number shrinks on mobile */
+.podium-rank-num {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  font-size: 42px;
+}
+@media (min-width: 640px) {
+  .podium-rank-num {
+    font-size: 72px;
+  }
+}
+@media (min-width: 900px) {
+  .podium-rank-num {
+    font-size: 88px;
+  }
+}
+
+/* Podium token value */
+.podium-tokens {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+}
+@media (min-width: 640px) {
+  .podium-tokens {
+    font-size: 26px;
+  }
+}
+@media (min-width: 900px) {
+  .podium-tokens {
+    font-size: 32px;
+  }
+}
+
+/* Podium bottom row: pinned to bottom-right on mobile, side-by-side on desktop */
+.podium-bottom {
+  position: absolute;
+  bottom: 14px;
+  right: 12px;
+  max-width: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+}
+@media (min-width: 640px) {
+  .podium-bottom {
+    position: static;
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 6px;
+    padding-top: 6px;
+    text-align: unset;
+  }
+  .podium-tokens-block {
+    text-align: right;
+  }
+}
+
+/* Podium handle */
+.podium-handle {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+@media (min-width: 640px) {
+  .podium-handle {
+    font-size: 15px;
+    margin-top: 14px;
+  }
+}
+@media (min-width: 900px) {
+  .podium-handle {
+    font-size: 18px;
+  }
+}
+
+/* ─── Shared easing curve ──────────────────────────────────────────────────── */
+/* Strong ease-out: starts fast, feels instantly responsive */
+
+/* ─── Landing CTA buttons ──────────────────────────────────────────────────── */
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition:
+    border-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover {
+    border-color: var(--color-text-dim);
+  }
+}
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--color-text);
+  border: 1px solid var(--color-text);
+  color: #000;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition:
+    background-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    border-color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background-color: rgba(255, 255, 255, 0.88);
+    border-color: rgba(255, 255, 255, 0.88);
+  }
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* ─── Auth dialog submit button ────────────────────────────────────────────── */
+
+.btn-submit {
+  width: 100%;
+  background: var(--color-text);
+  color: #000;
+  border: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-radius: 12px;
+  height: 48px;
+  cursor: pointer;
+  transition:
+    opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.btn-submit:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+@media (hover: hover) and (pointer: fine) {
+  .btn-submit:not(:disabled):hover {
+    opacity: 0.88;
+  }
+}
+.btn-submit:not(:disabled):active {
+  transform: scale(0.97);
 }
