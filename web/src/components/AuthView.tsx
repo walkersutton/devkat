@@ -382,7 +382,6 @@ export function AuthView() {
   const green = "var(--color-logo-green)";
   const border = "var(--color-border)";
   const muted = "var(--color-text-muted)";
-  const dim = "var(--color-text-dim)";
 
   return (
     <>
