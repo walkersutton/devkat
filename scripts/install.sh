@@ -50,4 +50,10 @@ esac
 echo "  ✓ Installed"
 echo ""
 
-"$INSTALL_DIR/$BINARY" --login < /dev/tty
+if "$INSTALL_DIR/$BINARY" --check-login >/dev/null 2>&1; then
+    echo "  ✓ Existing login found"
+    echo ""
+    "$INSTALL_DIR/$BINARY" --install
+else
+    "$INSTALL_DIR/$BINARY" --login < /dev/tty
+fi

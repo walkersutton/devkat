@@ -16,6 +16,7 @@ let piDir    = home.appendingPathComponent(".pi")
 
 func run() {
     if args.contains("--login")     { return runLogin() }
+    if args.contains("--check-login") { return runCheckLogin() }
     if args.contains("--logout")    { return runLogout() }
     if args.contains("--list")      { return listSessions() }
     if args.contains("--install")   { return installDaemon() }
@@ -232,6 +233,15 @@ func runLogout() {
     clearCredentials()
     clearAccountCreatedAt()
     print("devkat-push: logged out")
+}
+
+func runCheckLogin() {
+    do {
+        _ = try validAccessToken()
+        exit(0)
+    } catch {
+        exit(1)
+    }
 }
 
 // MARK: - List
