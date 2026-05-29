@@ -1,12 +1,12 @@
 import { useCallback, useRef, useState } from "react";
 import type { Session, LeaderboardEntry } from "../lib/types";
-import { dayLabel, leaderboardDisplayName, leaderboardFormattedTokens } from "../lib/types";
+import { dayLabel, leaderboardFormattedTokens } from "../lib/types";
 import { SessionCard } from "./SessionCard";
 
 export function HomeView({
   sessions,
-  leaderboard,
   weeklyLeaderboard,
+  userEmail,
   loading,
   showInfo,
   onInfoTap,
@@ -15,10 +15,11 @@ export function HomeView({
   onSessionTap,
   onCopyTap,
   onSettingsTap,
+  onLeaderboardTap,
 }: {
   sessions: Session[];
-  leaderboard: LeaderboardEntry[];
   weeklyLeaderboard: LeaderboardEntry[];
+  userEmail: string;
   loading: boolean;
   showInfo: boolean;
   onInfoTap: () => void;
@@ -27,6 +28,7 @@ export function HomeView({
   onSessionTap: (s: Session) => void;
   onCopyTap: () => void;
   onSettingsTap: () => void;
+  onLeaderboardTap: () => void;
 }) {
   const [copiedCommand, setCopiedCommand] = useState(false);
 
@@ -67,11 +69,12 @@ export function HomeView({
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        {leaderboard.length > 0 && (
-          <LeaderboardStrip entries={leaderboard} />
-        )}
-        {weeklyLeaderboard.length > 0 && (
-          <WeeklyLeaderboardStrip entries={weeklyLeaderboard} />
+        {weeklyLeaderboard.length > 0 && sessions.length > 0 && (
+          <YourRankLine
+            entries={weeklyLeaderboard}
+            userEmail={userEmail}
+            onTap={onLeaderboardTap}
+          />
         )}
         {loading && sessions.length === 0 ? (
           <div className="flex items-center justify-center py-20">
@@ -111,6 +114,55 @@ export function HomeView({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function YourRankLine({
+  entries,
+  userEmail,
+  onTap,
+}: {
+  entries: LeaderboardEntry[];
+  userEmail: string;
+  onTap: () => void;
+}) {
+  const idx = entries.findIndex((e) => e.email === userEmail);
+  const rank = idx >= 0 ? idx + 1 : null;
+  const tokens = idx >= 0 ? entries[idx].total_tokens : 0;
+
+  return (
+    <div className="px-[16px] pt-[14px] desk:px-8">
+      <button
+        onClick={onTap}
+        className="w-full flex items-center justify-between gap-4 rounded-2xl border border-logo-green/25 bg-gradient-to-b from-logo-green/[0.06] to-logo-green/[0.01] px-[18px] py-[14px] text-left transition-colors hover:border-logo-green/50 cursor-pointer"
+      >
+        <div className="flex flex-col gap-[4px]">
+          <span className="text-[9px] font-bold font-mono tracking-[0.18em] text-text-muted">
+            WEEKLY STANDING
+          </span>
+          {rank ? (
+            <span className="text-[24px] font-bold font-mono leading-none tracking-[-0.02em] text-logo-green text-glow">
+              #{rank}
+            </span>
+          ) : (
+            <span className="text-[15px] font-bold font-mono text-text">Not ranked yet</span>
+          )}
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end gap-[4px]">
+            <span className="text-[16px] font-bold font-mono tabular-nums text-text">
+              {rank ? leaderboardFormattedTokens(tokens) : "—"}
+            </span>
+            <span className="text-[9px] font-bold font-mono tracking-[0.18em] text-text-muted">
+              TOKENS
+            </span>
+          </div>
+          <svg className="w-[18px] h-[18px] text-logo-green" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </div>
+      </button>
     </div>
   );
 }
@@ -259,94 +311,6 @@ function SetupInfoSheet({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-const LEADERBOARD_ICONS: Record<number, string> = { 0: "🦁", 1: "🐆", 2: "🐈" };
-
-function LeaderboardStrip({ entries }: { entries: LeaderboardEntry[] }) {
-  return (
-    <div className="py-[14px]">
-      <div className="px-[16px] flex items-center gap-[8px] mb-[10px] desk:px-8">
-        <span className="text-[10px] font-bold font-mono text-text-muted tracking-[0.15em] whitespace-nowrap">
-          ALL TIME TOKEN BURNERS
-        </span>
-        <div className="flex-1 h-px bg-border" />
-      </div>
-      <div className="overflow-x-auto overflow-y-hidden" style={{ scrollbarWidth: "none" }}>
-        <div className="flex items-start gap-[24px] px-[16px] desk:px-8" style={{ width: "max-content" }}>
-          {entries.slice(0, 5).map((entry, i) => (
-            <div key={entry.email} className="flex flex-col gap-[4px]">
-              <div className="flex items-center gap-[6px]">
-                <span
-                  className="text-[11px] font-bold font-mono"
-                  style={{ color: i === 0 ? "var(--color-logo-green)" : "var(--color-text-dim)" }}
-                >
-                  {i + 1}
-                </span>
-                <span className="text-[11px] font-semibold font-mono text-text whitespace-nowrap">
-                  {leaderboardDisplayName(entry.email)}
-                </span>
-                {LEADERBOARD_ICONS[i] && (
-                  <span className="text-[12px]">{LEADERBOARD_ICONS[i]}</span>
-                )}
-              </div>
-              <span className="text-[10px] font-mono text-text-muted">
-                {leaderboardFormattedTokens(entry.total_tokens)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function WeeklyLeaderboardStrip({ entries }: { entries: LeaderboardEntry[] }) {
-  const left = entries.slice(0, 5);
-  const right = entries.slice(5, 10);
-  return (
-    <div className="py-[14px]">
-      <div className="px-[16px] flex items-center gap-[8px] mb-[10px] desk:px-8">
-        <span className="text-[10px] font-bold font-mono text-text-muted tracking-[0.15em] whitespace-nowrap">
-          WEEKLY TOKEN BURNERS
-        </span>
-        <div className="flex-1 h-px bg-border" />
-      </div>
-      <div className="px-[16px] flex gap-[24px] desk:px-8">
-        <div className="flex flex-col gap-[8px]">
-          {left.map((entry, i) => (
-            <WeeklyRow key={entry.email} entry={entry} rank={i + 1} />
-          ))}
-        </div>
-        {right.length > 0 && (
-          <div className="flex flex-col gap-[8px]">
-            {right.map((entry, i) => (
-              <WeeklyRow key={entry.email} entry={entry} rank={i + 6} />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function WeeklyRow({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
-  return (
-    <div className="flex items-baseline gap-[6px]">
-      <span
-        className="text-[10px] font-bold font-mono w-[14px] shrink-0"
-        style={{ color: rank === 1 ? "var(--color-logo-green)" : "var(--color-text-dim)" }}
-      >
-        {rank}
-      </span>
-      <span className="text-[10px] font-semibold font-mono text-text whitespace-nowrap">
-        {leaderboardDisplayName(entry.email)}
-      </span>
-      <span className="text-[9px] font-mono text-text-muted shrink-0">
-        {leaderboardFormattedTokens(entry.total_tokens)}
-      </span>
     </div>
   );
 }

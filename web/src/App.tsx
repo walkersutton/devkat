@@ -219,8 +219,8 @@ export default function App() {
         {activeTab === "home" && !showSettings && (
           <HomeView
             sessions={sessions}
-            leaderboard={leaderboard}
             weeklyLeaderboard={weeklyLeaderboard}
+            userEmail={session.user.email ?? ""}
             loading={sessionsLoading}
             showInfo={showInfo}
             onInfoTap={() => setShowInfo(true)}
@@ -232,6 +232,7 @@ export default function App() {
             }}
             onCopyTap={() => setActiveTab("copy")}
             onSettingsTap={() => setShowSettings(true)}
+            onLeaderboardTap={() => setActiveTab("leaderboard")}
           />
         )}
         {activeTab === "leaderboard" && !showSettings && (
