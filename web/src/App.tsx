@@ -192,8 +192,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background desk:flex">
-      {!showSettings && (
-        <aside className="hidden desk:flex w-[220px] shrink-0 flex-col border-r border-border bg-black/60 px-4 py-6">
+      <aside className="hidden desk:flex w-[220px] shrink-0 flex-col border-r border-border bg-black/60 px-4 py-6">
           <div className="mb-8 px-3 flex items-start justify-between">
             <div>
               <div className="font-led text-[28px] tracking-[0.08em] text-logo-green">devkat</div>
@@ -211,10 +210,9 @@ export default function App() {
             <SidebarButton active={activeTab === "leaderboard"} icon="leaderboard" label="Leaderboard" onClick={() => { setActiveTab("leaderboard"); setShowSettings(false); }} />
             <SidebarButton active={activeTab === "stats"} icon="stats" label="Your Stats" onClick={() => { setActiveTab("stats"); setShowSettings(false); }} />
             <SidebarButton active={activeTab === "copy"} icon="copy" label="Copy" onClick={() => { setActiveTab("copy"); setShowSettings(false); }} />
-            <SidebarButton active={false} icon="settings" label="Settings" onClick={() => setShowSettings(true)} />
+            <SidebarButton active={showSettings} icon="settings" label="Settings" onClick={() => setShowSettings(true)} />
           </div>
         </aside>
-      )}
 
       {/* Content area */}
       <div className="flex-1 min-w-0 overflow-auto pb-[70px] desk:pb-0">

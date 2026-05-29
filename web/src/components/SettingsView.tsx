@@ -32,84 +32,80 @@ export function SettingsView({ email, onClose }: { email: string; onClose: () =>
   if (legalSheet) {
     return (
       <LegalView
-        title={legalSheet === "dataPrivacy" ? "Data & Privacy" : legalSheet === "terms" ? "Terms of Service" : "Privacy Policy"}
+        title={legalSheet === "dataPrivacy" ? "DATA & PRIVACY" : legalSheet === "terms" ? "TERMS OF SERVICE" : "PRIVACY POLICY"}
         sections={legalSheet === "terms" ? termsOfService : privacyPolicy}
-        onClose={() => setLegalSheet(null)}
+        onBack={() => setLegalSheet(null)}
       />
     );
   }
 
   return (
-    <div className="max-w-lg md:max-w-2xl mx-auto md:px-8">
-      <div className="px-[16px] pt-[16px] md:px-0 md:pt-8 md:pb-10">
-        <div className="flex flex-col gap-[28px]">
-          {/* Header */}
-          <div className="relative flex items-center justify-center pt-[8px] pb-[4px]">
-            <button
-              onClick={onClose}
-              className="absolute left-0 w-[32px] h-[32px] bg-surface rounded-full flex items-center justify-center"
-            >
-              <svg className="w-[14px] h-[14px] text-text-dim" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <span className="text-[17px] font-semibold text-text">Settings</span>
-          </div>
+    <div className="scanlines mx-auto flex h-full max-w-lg flex-col desk:max-w-6xl">
+      {/* Mobile sticky header */}
+      <div className="sticky top-0 z-10 border-b border-border bg-background desk:hidden">
+        <div className="flex items-center px-4 py-[14px]">
+          <button
+            onClick={onClose}
+            className="flex items-center gap-2 text-text-muted hover:text-text transition-colors"
+          >
+            <svg className="w-[14px] h-[14px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="font-mono text-[10px] font-bold tracking-[0.16em]">BACK</span>
+          </button>
+        </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto px-4 pb-[100px] pt-5 desk:px-8 desk:pb-10 desk:pt-8">
+        {/* Page header */}
+        <div>
+          <div className="font-mono text-[11px] font-bold tracking-[0.2em] text-logo-green text-glow">
+            ACCOUNT
+          </div>
+          <h1 className="mt-3 font-led text-[40px] leading-none tracking-[0.1em] text-text desk:text-[58px]">
+            SETTINGS
+          </h1>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-5">
           {/* Data */}
-          <SettingsSection title="Data">
-            <ActionRow icon="refresh" label="Refresh Sessions" onClick={() => { window.location.reload(); }} />
+          <SettingsSection label="DATA">
+            <SettingsActionRow label="REFRESH SESSIONS" onClick={() => window.location.reload()} />
           </SettingsSection>
 
           {/* About */}
-          <SettingsSection title="About">
-            <ActionRow icon="terminal" label="Devkat" />
-            <SettingsDivider />
-            <InfoRow label="Version" value="1.0 (web)" />
-            <SettingsDivider />
-            <MailRow label="Contact" address="xavier@alleykat.app" />
+          <SettingsSection label="ABOUT">
+            <SettingsInfoRow label="APP" value="DEVKAT" />
+            <SettingsInfoRow label="PLATFORM" value="WEB" />
+            <SettingsInfoRow label="VERSION" value="1.0" />
+            <SettingsMailRow label="CONTACT" address="xavier@alleykat.app" />
           </SettingsSection>
 
           {/* Legal */}
-          <SettingsSection title="Legal">
-            <NavRow label="Data & Privacy" onClick={() => setLegalSheet("dataPrivacy")} />
-            <SettingsDivider />
-            <NavRow label="Terms of Service" onClick={() => setLegalSheet("terms")} />
-            <SettingsDivider />
-            <NavRow label="Privacy Policy" onClick={() => setLegalSheet("privacy")} />
+          <SettingsSection label="LEGAL">
+            <SettingsNavRow label="DATA & PRIVACY" onClick={() => setLegalSheet("dataPrivacy")} />
+            <SettingsNavRow label="TERMS OF SERVICE" onClick={() => setLegalSheet("terms")} />
+            <SettingsNavRow label="PRIVACY POLICY" onClick={() => setLegalSheet("privacy")} />
           </SettingsSection>
 
           {/* Account */}
-          <SettingsSection title="Account">
-            <InfoRow label="Email" value={email} />
-            <SettingsDivider />
-            <ActionRow label="Log Out" color="red" onClick={handleLogout} />
+          <SettingsSection label="ACCOUNT">
+            <SettingsInfoRow label="EMAIL" value={email} />
+            <SettingsActionRow label="LOG OUT" destructive onClick={handleLogout} />
           </SettingsSection>
 
-          {/* Delete Account */}
-          <SettingsSection title="Delete Account">
-            <ActionRow
-              label="Delete Account"
-              color="red"
+          {/* Danger zone */}
+          <SettingsSection label="DANGER ZONE">
+            <SettingsActionRow
+              label={isDeleting ? "DELETING..." : "DELETE ACCOUNT"}
+              destructive
               onClick={() => { setDeleteError(null); setShowDeleteConfirm(true); }}
               disabled={isDeleting}
             />
-            {isDeleting && (
-              <>
-                <SettingsDivider />
-                <div className="flex items-center gap-[10px] px-[16px] py-[14px]">
-                  <div className="w-3 h-3 border-2 border-text-dim border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[12px] font-mono text-text-dim">Deleting account...</span>
-                </div>
-              </>
-            )}
             {deleteError && (
-              <>
-                <SettingsDivider />
-                <div className="px-[16px] py-[14px]">
-                  <span className="text-[12px] font-mono text-red-400/85">{deleteError}</span>
-                </div>
-              </>
+              <div className="px-3 py-2.5 font-mono text-[11px] text-red-400/80 border-t border-border/60">
+                {deleteError}
+              </div>
             )}
           </SettingsSection>
         </div>
@@ -118,24 +114,30 @@ export function SettingsView({ email, onClose }: { email: string; onClose: () =>
       {/* Delete confirmation dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="relative bg-surface-raised rounded-2xl p-6 mx-8 max-w-sm w-full space-y-4">
-            <h3 className="text-[17px] font-semibold text-text text-center">Delete Account?</h3>
-            <p className="text-[13px] text-text-dim text-center leading-relaxed">
-              This permanently deletes your account and all synced session data. This cannot be undone.
-            </p>
-            <div className="flex gap-3 pt-2">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowDeleteConfirm(false)} />
+          <div className="relative border border-border bg-surface-raised mx-8 max-w-sm w-full">
+            <div className="border-b border-border bg-white/[0.025] px-3 py-3">
+              <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-text-muted">
+                CONFIRM DELETION
+              </span>
+            </div>
+            <div className="px-3 py-4">
+              <p className="font-mono text-[13px] text-text-dim leading-[1.7]">
+                This permanently deletes your account and all synced session data. This cannot be undone.
+              </p>
+            </div>
+            <div className="flex border-t border-border">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 py-[11px] rounded-xl bg-surface text-[15px] font-semibold text-text"
+                className="flex-1 py-3 font-mono text-[11px] font-bold tracking-[0.14em] text-text-muted border-r border-border hover:bg-white/[0.03] transition-colors"
               >
-                Cancel
+                CANCEL
               </button>
               <button
                 onClick={() => { setShowDeleteConfirm(false); handleDelete(); }}
-                className="flex-1 py-[11px] rounded-xl bg-red-500/20 text-[15px] font-semibold text-red-400"
+                className="flex-1 py-3 font-mono text-[11px] font-bold tracking-[0.14em] text-red-400 hover:bg-red-400/5 transition-colors"
               >
-                Delete
+                DELETE
               </button>
             </div>
           </div>
@@ -145,90 +147,76 @@ export function SettingsView({ email, onClose }: { email: string; onClose: () =>
   );
 }
 
-function SettingsSection({ title, children }: { title: string; children: React.ReactNode }) {
+function SettingsSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-[8px]">
-      <p className="text-[15px] font-semibold text-text-muted pl-[4px]">{title}</p>
-      <div className="bg-surface-raised rounded-[12px] overflow-hidden">
+    <div className="border border-border bg-white/[0.012]">
+      <div className="border-b border-border bg-white/[0.025] px-3 py-3">
+        <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-text-muted">{label}</span>
+      </div>
+      <div className="divide-y divide-border/60">
         {children}
       </div>
     </div>
   );
 }
 
-function ActionRow({
-  icon,
-  label,
-  color = "white",
-  onClick,
-  disabled,
-}: {
-  icon?: string;
-  label: string;
-  color?: string;
-  onClick?: () => void;
-  disabled?: boolean;
-}) {
-  const textColor = color === "red" ? "text-red-400" : "text-text";
-
+function SettingsInfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full flex items-center gap-[10px] px-[16px] py-[14px] hover:bg-white/[0.03] transition-colors disabled:opacity-50"
-    >
-      {icon === "refresh" && (
-        <svg className={`w-[15px] h-[15px] ${textColor}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-        </svg>
-      )}
-      {icon === "terminal" && (
-        <svg className={`w-[15px] h-[15px] ${textColor}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-      )}
-      <span className={`text-[17px] ${textColor}`}>{label}</span>
-    </button>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between px-[16px] py-[14px]">
-      <span className="text-[17px] text-text">{label}</span>
-      <span className="text-[17px] text-text-dim">{value}</span>
+    <div className="flex items-center justify-between gap-4 px-3 py-3.5">
+      <span className="font-mono text-[12px] font-bold tracking-[0.08em] text-text-dim shrink-0">{label}</span>
+      <span className="font-mono text-[13px] text-text truncate text-right">{value}</span>
     </div>
   );
 }
 
-function NavRow({ label, onClick }: { label: string; onClick: () => void }) {
+function SettingsActionRow({
+  label,
+  destructive,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  destructive?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center justify-between px-[16px] py-[14px] hover:bg-white/[0.03] transition-colors"
+      disabled={disabled}
+      className={`w-full flex items-center px-3 py-3.5 hover:bg-white/[0.03] transition-colors disabled:opacity-40 ${
+        destructive ? "text-red-400" : "text-text"
+      }`}
     >
-      <span className="text-[17px] text-text">{label}</span>
-      <svg className="w-[13px] h-[13px] text-text-muted" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+      <span className="font-mono text-[13px] font-bold tracking-[0.06em]">{label}</span>
+    </button>
+  );
+}
+
+function SettingsNavRow({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between gap-3 px-3 py-3.5 hover:bg-white/[0.03] transition-colors"
+    >
+      <span className="font-mono text-[13px] font-bold tracking-[0.06em] text-text">{label}</span>
+      <svg className="w-[11px] h-[11px] text-text-dim shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
     </button>
   );
 }
 
-function MailRow({ label, address }: { label: string; address: string }) {
+function SettingsMailRow({ label, address }: { label: string; address: string }) {
   return (
     <a
       href={`mailto:${address}`}
-      className="flex items-center justify-between px-[16px] py-[14px] hover:bg-white/[0.03] transition-colors"
+      className="flex items-center justify-between gap-4 px-3 py-3.5 hover:bg-white/[0.03] transition-colors"
     >
-      <span className="text-[17px] text-text">{label}</span>
-      <span className="text-[17px] text-text-dim">{address}</span>
+      <span className="font-mono text-[12px] font-bold tracking-[0.08em] text-text-dim shrink-0">{label}</span>
+      <span className="font-mono text-[13px] text-text-dim truncate text-right">{address}</span>
     </a>
   );
-}
-
-function SettingsDivider() {
-  return <div className="h-[0.5px] bg-border ml-[16px]" />;
 }
 
 // --- Legal View ---
@@ -238,31 +226,59 @@ interface LegalSectionData {
   body: string;
 }
 
-function LegalView({ title, sections, onClose }: { title: string; sections: LegalSectionData[]; onClose: () => void }) {
+function LegalView({ title, sections, onBack }: { title: string; sections: LegalSectionData[]; onBack: () => void }) {
   return (
-    <div className="max-w-lg md:max-w-3xl mx-auto md:px-8">
-      <div className="px-[20px] pt-[16px] pb-[60px] md:px-0 md:pt-8 md:pb-10">
-        <div className="flex flex-col gap-[24px]">
-          {/* Header */}
-          <div className="relative flex items-center justify-center pt-[8px] pb-[8px]">
-            <button
-              onClick={onClose}
-              className="absolute left-0 w-[32px] h-[32px] bg-surface rounded-full flex items-center justify-center"
-            >
-              <svg className="w-[14px] h-[14px] text-text-dim" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <span className="text-[17px] font-semibold text-text">{title}</span>
-          </div>
+    <div className="scanlines mx-auto flex h-full max-w-lg flex-col desk:max-w-6xl">
+      {/* Mobile sticky header */}
+      <div className="sticky top-0 z-10 border-b border-border bg-background desk:hidden">
+        <div className="flex items-center px-4 py-[14px]">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-text-muted hover:text-text transition-colors"
+          >
+            <svg className="w-[14px] h-[14px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="font-mono text-[10px] font-bold tracking-[0.16em]">SETTINGS</span>
+          </button>
+        </div>
+      </div>
 
-          {/* Sections */}
+      <div className="flex-1 overflow-y-auto px-4 pb-[100px] pt-5 desk:px-8 desk:pb-10 desk:pt-8">
+        {/* Desktop back link */}
+        <button
+          onClick={onBack}
+          className="hidden desk:flex items-center gap-2 mb-6 text-text-muted hover:text-text transition-colors"
+        >
+          <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span className="font-mono text-[10px] font-bold tracking-[0.14em]">BACK TO SETTINGS</span>
+        </button>
+
+        {/* Page header */}
+        <div>
+          <div className="font-mono text-[11px] font-bold tracking-[0.2em] text-logo-green text-glow">
+            LEGAL
+          </div>
+          <h1 className="mt-3 font-led text-[40px] leading-none tracking-[0.1em] text-text desk:text-[58px]">
+            {title}
+          </h1>
+        </div>
+
+        <div className="mt-8 flex flex-col gap-3">
           {sections.map((section, i) => (
-            <div key={i} className="flex flex-col gap-[8px]">
+            <div key={i} className="border border-border bg-white/[0.012]">
               {section.heading && (
-                <p className="text-[15px] font-semibold text-text">{section.heading}</p>
+                <div className="border-b border-border bg-white/[0.025] px-3 py-3">
+                  <span className="font-mono text-[10px] font-bold tracking-[0.18em] text-text-muted">
+                    {section.heading.toUpperCase()}
+                  </span>
+                </div>
               )}
-              <p className="text-[15px] text-text-dim leading-[1.6] whitespace-pre-line">{section.body}</p>
+              <div className="px-3 py-4">
+                <p className="font-mono text-[13px] text-text-dim leading-[1.7] whitespace-pre-line">{section.body}</p>
+              </div>
             </div>
           ))}
         </div>
